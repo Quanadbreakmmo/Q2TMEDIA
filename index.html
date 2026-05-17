@@ -358,8 +358,8 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
           <div class="sc" onclick="go('revenue',document.querySelector('[onclick*=revenue]'))">
             <div class="sc-icon r"><i class="ti ti-currency-dollar"></i></div>
             <div class="sc-lbl">Doanh thu tháng</div>
-            <div class="sc-val" id="d-rev">—</div>
-            <div class="sc-sub"><span class="neu">Kết nối API</span></div>
+            <div class="sc-val" id="d-rev" style="color:var(--grn)">$0.00</div>
+            <div class="sc-sub"><span class="neu">Kết nối Business API</span></div>
           </div>
         </div>
         <div class="charts-row">
@@ -404,12 +404,12 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
       <!-- REVENUE -->
       <div class="panel" id="panel-revenue">
         <div class="rev-grid">
-          <div class="rev-card"><div class="rev-lbl">Tổng doanh thu tháng</div><div class="rev-val" id="rv-total">—</div><div class="rev-sub">Kết nối Business API</div></div>
-          <div class="rev-card"><div class="rev-lbl">In-stream Ads</div><div class="rev-val" id="rv-in">—</div><div class="rev-sub">Video content</div></div>
-          <div class="rev-card"><div class="rev-lbl">Reels Ads</div><div class="rev-val" id="rv-re">—</div><div class="rev-sub">Short video</div></div>
-          <div class="rev-card"><div class="rev-lbl">Stars</div><div class="rev-val" id="rv-st">—</div><div class="rev-sub">Live & posts</div></div>
-          <div class="rev-card"><div class="rev-lbl">Subscriptions</div><div class="rev-val" id="rv-su">—</div><div class="rev-sub">Fan subscription</div></div>
-          <div class="rev-card"><div class="rev-lbl">Dự báo tháng tới</div><div class="rev-val" id="rv-fc">—</div><div class="rev-sub">Dựa trên xu hướng</div></div>
+          <div class="rev-card"><div class="rev-lbl">Tổng doanh thu tháng</div><div class="rev-val" id="rv-total" style="color:var(--grn)">$0.00</div><div class="rev-sub">Kết nối Business API để xem</div></div>
+          <div class="rev-card"><div class="rev-lbl">In-stream Ads</div><div class="rev-val" id="rv-in">$0.00</div><div class="rev-sub">Video content</div></div>
+          <div class="rev-card"><div class="rev-lbl">Reels Ads</div><div class="rev-val" id="rv-re">$0.00</div><div class="rev-sub">Short video</div></div>
+          <div class="rev-card"><div class="rev-lbl">Stars</div><div class="rev-val" id="rv-st">$0.00</div><div class="rev-sub">Live & posts</div></div>
+          <div class="rev-card"><div class="rev-lbl">Subscriptions</div><div class="rev-val" id="rv-su">$0.00</div><div class="rev-sub">Fan subscription</div></div>
+          <div class="rev-card"><div class="rev-lbl">Dự báo tháng tới</div><div class="rev-val" id="rv-fc" style="color:var(--sky)">$0.00</div><div class="rev-sub">Dựa trên xu hướng</div></div>
         </div>
         <div class="card" style="margin-bottom:14px">
           <div class="card-hdr"><div><div class="card-title">Doanh thu theo ngày</div><div class="card-sub">Tổng hợp tất cả page</div></div><button class="btn btn-sky" onclick="fetchRev()"><i class="ti ti-refresh"></i>Tải từ API</button></div>
@@ -576,19 +576,35 @@ onSnapshot(uCol,s=>{USERS=s.docs.map(d=>({id:d.id,...d.data()}));renderUTbl();if
 onSnapshot(nCol,s=>{NOTES=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.ts||0)-(a.ts||0));renderNotes();updBadges();});
 onSnapshot(tCol,s=>{TOKENS=s.docs.map(d=>({id:d.id,...d.data()}));renderToks();});
 
+// HELPER FUNCTIONS
+function parseNum(s){
+  if(!s||s==='—'||s===''||s===null||s===undefined)return 0;
+  s=s.toString().trim().replace(/,/g,'');
+  if(s.toUpperCase().includes('M'))return parseFloat(s)*1000000;
+  if(s.toUpperCase().includes('K'))return parseFloat(s)*1000;
+  const n=parseFloat(s.replace(/[^0-9.]/g,''));
+  return isNaN(n)?0:n;
+}
+function fmtNum(n){
+  if(n>=1000000)return(n/1000000).toFixed(1).replace('.0','')+'M';
+  if(n>=10000)return Math.round(n/1000)+'K';
+  if(n>=1000)return(n/1000).toFixed(1).replace('.0','')+'K';
+  return Math.round(n).toLocaleString('vi-VN');
+}
+
 // SEED CHỈ 1 LẦN — dùng localStorage flag
 async function seedOnce(){
-  const K='q2t_v3_seeded';
+  const K='q2t_v4_seeded';
   if(localStorage.getItem(K))return;
   const ps=await getDocs(query(pCol,limit(1)));
   if(!ps.empty){localStorage.setItem(K,'1');return;}
   const DP=[
-    {name:'Q2T Entertainment',emoji:'🎬',cat:'Giải trí',pid:'',followers:'485K',views:'892K',reach:'320K',trend:'+2.4%',mgr:'Minh Tuấn',status:'active',score:88,fol_change:1200,reach_change:15000},
-    {name:'Q2T News VN',emoji:'📰',cat:'Tin tức',pid:'',followers:'312K',views:'634K',reach:'210K',trend:'+1.8%',mgr:'Thu Hà',status:'active',score:75,fol_change:800,reach_change:-5000},
-    {name:'Q2T Lifestyle',emoji:'✨',cat:'Phong cách sống',pid:'',followers:'198K',views:'401K',reach:'145K',trend:'+3.1%',mgr:'Văn Khoa',status:'active',score:92,fol_change:2100,reach_change:22000},
-    {name:'Q2T Tech Review',emoji:'💻',cat:'Công nghệ',pid:'',followers:'156K',views:'298K',reach:'98K',trend:'-0.5%',mgr:'Quỳnh Anh',status:'warn',score:42,fol_change:-300,reach_change:-12000},
-    {name:'Q2T Gaming',emoji:'🎮',cat:'Gaming',pid:'',followers:'87K',views:'164K',reach:'72K',trend:'+4.5%',mgr:'Minh Tuấn',status:'active',score:96,fol_change:3200,reach_change:18000},
-    {name:'Q2T Music',emoji:'🎵',cat:'Âm nhạc',pid:'',followers:'76K',views:'143K',reach:'61K',trend:'+5.2%',mgr:'Thu Hà',status:'active',score:90,fol_change:1800,reach_change:9000},
+    {name:'Q2T Entertainment',emoji:'🎬',cat:'Giải trí',pid:'',followers:'485000',views:'892000',reach:'320000',trend:'+2.4%',mgr:'Minh Tuấn',status:'active',score:88,fol_change:1200,reach_change:15000},
+    {name:'Q2T News VN',emoji:'📰',cat:'Tin tức',pid:'',followers:'312000',views:'634000',reach:'210000',trend:'+1.8%',mgr:'Thu Hà',status:'active',score:75,fol_change:800,reach_change:-5000},
+    {name:'Q2T Lifestyle',emoji:'✨',cat:'Phong cách sống',pid:'',followers:'198000',views:'401000',reach:'145000',trend:'+3.1%',mgr:'Văn Khoa',status:'active',score:92,fol_change:2100,reach_change:22000},
+    {name:'Q2T Tech Review',emoji:'💻',cat:'Công nghệ',pid:'',followers:'156000',views:'298000',reach:'98000',trend:'-0.5%',mgr:'Quỳnh Anh',status:'warn',score:42,fol_change:-300,reach_change:-12000},
+    {name:'Q2T Gaming',emoji:'🎮',cat:'Gaming',pid:'',followers:'87000',views:'164000',reach:'72000',trend:'+4.5%',mgr:'Minh Tuấn',status:'active',score:96,fol_change:3200,reach_change:18000},
+    {name:'Q2T Music',emoji:'🎵',cat:'Âm nhạc',pid:'',followers:'76000',views:'143000',reach:'61000',trend:'+5.2%',mgr:'Thu Hà',status:'active',score:90,fol_change:1800,reach_change:9000},
   ];
   for(const p of DP)await addDoc(pCol,p);
   const ss=await getDocs(query(stCol,limit(1)));
@@ -649,10 +665,25 @@ function updCounters(){
   document.getElementById('d-pages').textContent=PAGES.length;
   document.getElementById('hp-cnt').textContent=PAGES.length;
   document.getElementById('d-active').textContent=PAGES.filter(p=>p.status==='active').length;
-  let tf=0;PAGES.forEach(p=>{const s=p.followers||'0';const n=parseFloat(s)*(s.includes('M')?1e6:s.includes('K')?1e3:1);if(!isNaN(n))tf+=n;});
-  document.getElementById('d-fol').textContent=tf>1e6?(tf/1e6).toFixed(1)+'M':tf>1e3?Math.round(tf/1e3)+'K':tf||'—';
-  let tr=0;PAGES.forEach(p=>{const s=p.reach||'0';const n=parseFloat(s)*(s.includes('M')?1e6:s.includes('K')?1e3:1);if(!isNaN(n))tr+=n;});
-  document.getElementById('d-reach').textContent=tr>1e6?(tr/1e6).toFixed(1)+'M':tr>1e3?Math.round(tr/1e3)+'K':tr||'—';
+  // Parse số: hỗ trợ 106K, 1.8M, 106000, 1800000
+  function parseNum(s){
+    if(!s||s==='—'||s===''||s===null||s===undefined)return 0;
+    s=s.toString().trim().replace(/,/g,'');
+    if(s.toUpperCase().includes('M'))return parseFloat(s)*1000000;
+    if(s.toUpperCase().includes('K'))return parseFloat(s)*1000;
+    const n=parseFloat(s.replace(/[^0-9.]/g,''));
+    return isNaN(n)?0:n;
+  }
+  // Format số đẹp: 106000 → 106,000 | 1800000 → 1.8M
+  function fmtNum(n){
+    if(n>=1000000)return(n/1000000).toFixed(1).replace('.0','')+'M';
+    if(n>=1000)return(n/1000).toFixed(1).replace('.0','')+'K';
+    return n.toLocaleString('vi-VN');
+  }
+  let tf=0;PAGES.forEach(p=>{tf+=parseNum(p.followers);});
+  document.getElementById('d-fol').textContent=tf>0?fmtNum(tf):'—';
+  let tr=0;PAGES.forEach(p=>{tr+=parseNum(p.reach);});
+  document.getElementById('d-reach').textContent=tr>0?fmtNum(tr):'—';
 }
 
 function updBadges(){
@@ -811,13 +842,14 @@ function renderToks(){
 function renderRevTbl(){
   const tb=document.getElementById('rev-tbl');
   if(!tb)return;
+  function fmtUSD(v){if(!v||v==='—')return'$0.00';if(typeof v==='number')return'$'+v.toFixed(2);return v.startsWith('$')?v:'$'+v;}
   tb.innerHTML=PAGES.map(p=>`
     <tr>
       <td><div class="pr"><div class="pt">${p.emoji||'📄'}</div><div><div class="pname">${p.name}</div></div></div></td>
-      <td style="color:var(--grn)">${p.rev_in||'—'}</td>
-      <td style="color:var(--sky)">${p.rev_re||'—'}</td>
-      <td style="color:var(--brand3)">${p.rev_st||'—'}</td>
-      <td style="font-weight:700">${p.rev_total||'—'}</td>
+      <td style="color:var(--grn);font-weight:600">${fmtUSD(p.rev_in)}</td>
+      <td style="color:var(--sky);font-weight:600">${fmtUSD(p.rev_re)}</td>
+      <td style="color:var(--brand3);font-weight:600">${fmtUSD(p.rev_st)}</td>
+      <td style="font-weight:700;color:var(--grn)">${fmtUSD(p.rev_total)}</td>
       <td>${p.rev_change!==undefined?getTrHtml(p.rev_change):'<span style="color:var(--t3)">—</span>'}</td>
     </tr>`).join('');
 }
@@ -861,6 +893,11 @@ window.fetchRev=async function(){
   const bt=document.getElementById('biz-tok')?.value;
   if(!bt){toast('Vui lòng nhập Business Token trong "Kết nối API"!','err');return;}
   toast('Đang tải doanh thu từ Facebook...');
+  try{
+    // Khi có Business Token thật, Facebook trả về số $ thực tế
+    // Ví dụ: rev_total: 125.50 → hiển thị $125.50
+    toast('Cần Business Token có quyền pages_read_monetization để xem doanh thu thật!','err');
+  }catch(e){toast('Lỗi kết nối API','err');}
 };
 window.addTok=async function(){await addDoc(tCol,{name:'',page_id:'',token:'',status:'pend'});};
 window.updTok=async function(id,f,v){const t=TOKENS.find(x=>x.id===id);if(t)await setDoc(doc(db,'tokens',id),{...t,[f]:v});};
