@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q2T MEDIA — Analytics Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold:#C8A84B;--gold2:#E5C97A;--gold3:#8B6914;
+  --dark:#09090E;--dark2:#0F0F18;--dark3:#161622;--dark4:#1C1C2E;
+  --s1:#1E1E30;--s2:#242438;--s3:#2A2A42;
+  --t1:#EDEAE2;--t2:#A8A49C;--t3:#636070;
+  --blue:#5B7FE8;--blu2:#8FAAFF;
+  --grn:#3DC87A;--red:#E05555;--pur:#9370DB;
+  --bdr:rgba(200,168,75,0.14);--bdr2:rgba(255,255,255,0.055);
+  --font-serif:'Cormorant Garamond',serif;
+  --font-body:'Outfit',sans-serif;
+  --r:12px;--r2:16px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font-body);background:var(--dark);color:var(--t1);display:flex;font-size:14px;line-height:1.5}
+#login-screen{position:fixed;inset:0;background:var(--dark);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:0}
+.login-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(200,168,75,0.12) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 80% 100%,rgba(91,127,232,0.08) 0%,transparent 60%);pointer-events:none}
+.login-box{background:var(--dark3);border:1px solid var(--bdr);border-radius:20px;padding:44px 40px;width:400px;max-width:92vw;position:relative;box-shadow:0 40px 80px rgba(0,0,0,0.5)}
+.login-logo{text-align:center;margin-bottom:32px}
+.login-logo-icon{width:54px;height:54px;background:linear-gradient(135deg,var(--gold),var(--gold3));border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:24px;font-weight:700;color:#09090E;margin-bottom:12px}
+.login-logo-name{font-family:var(--font-serif);font-size:26px;font-weight:700;color:var(--gold);letter-spacing:1px}
+.login-logo-sub{font-size:11px;color:var(--t3);letter-spacing:3px;text-transform:uppercase;margin-top:2px}
+.login-title{font-size:15px;font-weight:500;margin-bottom:20px;color:var(--t2);text-align:center}
+.fl-group{margin-bottom:14px}
+.fl-label{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px;display:block;font-weight:500}
+.fl-input{width:100%;background:var(--s2);border:1px solid var(--bdr2);border-radius:10px;padding:11px 14px;color:var(--t1);font-size:13.5px;font-family:var(--font-body);outline:none;transition:border .2s}
+.fl-input:focus{border-color:rgba(200,168,75,0.5)}
+.login-err{font-size:12px;color:var(--red);text-align:center;margin-top:8px;min-height:16px}
+.btn-login{width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),var(--gold3));color:#09090E;border:none;border-radius:10px;font-size:14px;font-weight:600;font-family:var(--font-body);cursor:pointer;margin-top:8px;transition:opacity .2s}
+.btn-login:hover{opacity:.88}
+.login-hint{font-size:11px;color:var(--t3);text-align:center;margin-top:16px}
+.login-hint span{color:var(--gold);font-weight:500}
+#app{display:none;width:100%;height:100%;flex-direction:row}
+#app.visible{display:flex}
+.sb{width:232px;min-width:232px;background:var(--dark2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:relative;overflow:hidden}
+.sb::before{content:'';position:absolute;top:-100px;left:-100px;width:300px;height:300px;background:radial-gradient(circle,rgba(200,168,75,0.07) 0%,transparent 65%);pointer-events:none}
+.sb-logo{padding:22px 18px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px}
+.sb-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--gold),var(--gold3));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--font-serif);font-size:15px;font-weight:700;color:#09090E;flex-shrink:0}
+.sb-logo-text{font-family:var(--font-serif);font-size:17px;font-weight:700;color:var(--gold);letter-spacing:.5px}
+.sb-logo-sub{font-size:9.5px;color:var(--t3);letter-spacing:2px;text-transform:uppercase}
+.sb-api{margin:10px 14px;padding:8px 11px;background:rgba(66,103,178,0.12);border:1px solid rgba(66,103,178,0.25);border-radius:9px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--blu2);font-weight:400}
+.sb-dot{width:7px;height:7px;background:var(--grn);border-radius:50%;box-shadow:0 0 7px var(--grn);animation:blink 2s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.sb-nav{padding:10px 0;flex:1;overflow-y:auto}
+.sb-nav::-webkit-scrollbar{width:0}
+.sb-sec{padding:6px 16px 2px;font-size:9.5px;color:var(--t3);letter-spacing:2px;text-transform:uppercase;margin-top:6px;font-weight:500}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 18px;cursor:pointer;transition:all .18s;font-size:13px;color:var(--t2);border-left:2px solid transparent;font-weight:400}
+.sb-item:hover{background:rgba(255,255,255,0.035);color:var(--t1)}
+.sb-item.on{background:rgba(200,168,75,0.075);color:var(--gold);border-left-color:var(--gold);font-weight:500}
+.sb-item .ti{font-size:15px}
+.sb-badge{margin-left:auto;background:var(--blue);color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600}
+.sb-bottom{padding:14px;border-top:1px solid var(--bdr)}
+.sb-user{display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 10px;border-radius:10px;transition:background .2s}
+.sb-user:hover{background:rgba(255,255,255,0.04)}
+.sb-av{width:33px;height:33px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--pur));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0}
+.sb-uname{font-size:12.5px;font-weight:500}
+.sb-urole{font-size:10.5px;color:var(--t3)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:58px;padding:0 26px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bdr2);background:rgba(9,9,14,0.7);backdrop-filter:blur(12px);flex-shrink:0}
+.topbar-title{font-family:var(--font-serif);font-size:21px;font-weight:600;letter-spacing:.3px}
+.topbar-r{display:flex;align-items:center;gap:9px}
+.period-tabs{display:flex;background:var(--s2);border:1px solid var(--bdr2);border-radius:9px;padding:3px;gap:2px}
+.ptab{padding:5px 12px;font-size:12px;cursor:pointer;border-radius:7px;color:var(--t2);transition:all .18s;font-weight:500}
+.ptab.on{background:var(--gold);color:#09090E}
+.ico-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--bdr2);background:var(--s2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);transition:all .18s;font-size:15px;position:relative}
+.ico-btn:hover{border-color:var(--bdr);color:var(--t1)}
+.red-dot{position:absolute;top:7px;right:7px;width:6px;height:6px;background:var(--red);border-radius:50%}
+.content{flex:1;overflow-y:auto;padding:22px 26px}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-thumb{background:rgba(200,168,75,.2);border-radius:2px}
+.panel{display:none}
+.panel.on{display:block}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.sc{background:var(--s1);border:1px solid var(--bdr2);border-radius:var(--r2);padding:18px;cursor:pointer;transition:all .22s;position:relative;overflow:hidden}
+.sc:hover{border-color:var(--bdr);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.sc-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:13px}
+.sc-icon.g{background:rgba(200,168,75,.13);color:var(--gold)}
+.sc-icon.b{background:rgba(91,127,232,.13);color:var(--blu2)}
+.sc-icon.n{background:rgba(61,200,122,.13);color:var(--grn)}
+.sc-icon.p{background:rgba(147,112,219,.13);color:var(--pur)}
+.sc-lbl{font-size:10.5px;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;font-weight:500}
+.sc-val{font-family:var(--font-serif);font-size:27px;font-weight:600;line-height:1;letter-spacing:.5px}
+.sc-sub{font-size:11.5px;color:var(--t3);margin-top:7px;display:flex;align-items:center;gap:5px}
+.up{color:var(--grn);font-weight:600}
+.dn{color:var(--red);font-weight:600}
+.card{background:var(--s1);border:1px solid var(--bdr2);border-radius:var(--r2);padding:18px}
+.card-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.card-title{font-family:var(--font-serif);font-size:16px;font-weight:600;letter-spacing:.2px}
+.card-sub{font-size:11.5px;color:var(--t3);margin-top:2px}
+.charts-row{display:grid;grid-template-columns:1fr 288px;gap:14px;margin-bottom:22px}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-family:var(--font-serif);font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;letter-spacing:.2px}
+.sec-title .ti{color:var(--gold);font-size:15px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{padding:9px 13px;text-align:left;color:var(--t3);font-size:10.5px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--bdr2);font-weight:500;font-family:var(--font-body)}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.025);cursor:pointer;transition:background .14s}
+tbody tr:hover{background:rgba(255,255,255,.025)}
+tbody td{padding:11px 13px;vertical-align:middle;font-size:13px;color:var(--t1)}
+.pr{display:flex;align-items:center;gap:9px}
+.pt{width:34px;height:34px;border-radius:8px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.pn{font-weight:500;font-size:13px}
+.pc{font-size:11px;color:var(--t3)}
+.sdot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+.sdot.act{background:var(--grn);box-shadow:0 0 5px var(--grn)}
+.sdot.pau{background:var(--gold)}
+.pbar-w{display:inline-flex;align-items:center;gap:6px}
+.pbar{background:var(--s3);height:4px;border-radius:2px;width:64px}
+.pbar-f{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold3),var(--gold2))}
+.tbl-edit-btn{padding:4px 10px;font-size:11px;border:1px solid var(--bdr2);border-radius:6px;background:transparent;color:var(--t2);cursor:pointer;font-family:var(--font-body);transition:all .15s}
+.tbl-edit-btn:hover{border-color:var(--gold);color:var(--gold)}
+.tbl-del-btn{padding:4px 10px;font-size:11px;border:1px solid rgba(224,85,85,.25);border-radius:6px;background:transparent;color:var(--red);cursor:pointer;font-family:var(--font-body);transition:all .15s}
+.tbl-del-btn:hover{background:rgba(224,85,85,.1)}
+.fp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+.fp-card{background:var(--s1);border:1px solid var(--bdr2);border-radius:var(--r2);padding:15px;transition:all .2s;position:relative}
+.fp-card:hover{border-color:var(--bdr);transform:translateY(-1px)}
+.fp-actions{position:absolute;top:12px;right:12px;display:flex;gap:5px;opacity:0;transition:opacity .2s}
+.fp-card:hover .fp-actions{opacity:1}
+.fp-act-btn{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:none;transition:all .15s}
+.fp-act-edit{background:rgba(91,127,232,.15);color:var(--blu2)}
+.fp-act-edit:hover{background:rgba(91,127,232,.3)}
+.fp-act-del{background:rgba(224,85,85,.12);color:var(--red)}
+.fp-act-del:hover{background:rgba(224,85,85,.25)}
+.fp-meta{display:flex;gap:7px;margin:10px 0}
+.fp-stat{flex:1;background:var(--s3);border-radius:8px;padding:8px;text-align:center}
+.fp-sl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;font-weight:500}
+.fp-sv{font-family:var(--font-serif);font-size:15px;font-weight:600}
+.staff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.staff-card{background:var(--s1);border:1px solid var(--bdr2);border-radius:var(--r);padding:13px;display:flex;align-items:center;gap:11px;transition:all .18s;position:relative}
+.staff-card:hover{border-color:var(--bdr)}
+.staff-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;font-family:var(--font-body)}
+.odot{width:9px;height:9px;border-radius:50%;border:2px solid var(--s1);flex-shrink:0}
+.odot.on{background:var(--grn)}
+.odot.off{background:var(--t3)}
+.staff-acts{position:absolute;top:10px;right:10px;display:flex;gap:4px;opacity:0;transition:opacity .2s}
+.staff-card:hover .staff-acts{opacity:1}
+.btn{padding:7px 15px;border-radius:8px;font-size:12.5px;font-weight:500;cursor:pointer;border:none;font-family:var(--font-body);transition:all .18s;display:inline-flex;align-items:center;gap:5px;line-height:1}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold3));color:#09090E;font-weight:600}
+.btn-gold:hover{opacity:.88}
+.btn-out{background:transparent;border:1px solid var(--bdr2);color:var(--t2)}
+.btn-out:hover{border-color:var(--bdr);color:var(--t1)}
+.btn-red{background:rgba(224,85,85,.12);border:1px solid rgba(224,85,85,.25);color:var(--red)}
+.btn-red:hover{background:rgba(224,85,85,.22)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(5px);z-index:500;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.modal{background:var(--dark3);border:1px solid var(--bdr);border-radius:18px;padding:26px;width:440px;max-width:94vw;max-height:90vh;overflow-y:auto}
+.modal::-webkit-scrollbar{width:3px}
+.modal::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-family:var(--font-serif);font-size:19px;font-weight:600;color:var(--gold)}
+.close-btn{width:28px;height:28px;border-radius:7px;background:var(--s2);border:none;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s}
+.close-btn:hover{background:var(--s3);color:var(--t1)}
+.fg{margin-bottom:13px}
+.fl{font-size:10.5px;color:var(--t3);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:1px;font-weight:500}
+.fi,.fs{width:100%;background:var(--s2);border:1px solid var(--bdr2);border-radius:9px;padding:10px 12px;color:var(--t1);font-size:13px;font-family:var(--font-body);outline:none;transition:border .18s}
+.fi:focus,.fs:focus{border-color:rgba(200,168,75,.45)}
+.fs{appearance:none}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--bdr2)}
+.confirm-box{background:var(--dark3);border:1px solid rgba(224,85,85,.3);border-radius:14px;padding:24px;width:360px;max-width:92vw;text-align:center}
+.confirm-icon{font-size:32px;color:var(--red);margin-bottom:12px}
+.confirm-title{font-family:var(--font-serif);font-size:17px;font-weight:600;margin-bottom:8px}
+.confirm-msg{font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.6}
+.toast{position:fixed;top:66px;right:18px;background:var(--s1);border:1px solid rgba(61,200,122,.35);border-radius:11px;padding:11px 15px;font-size:13px;z-index:9000;display:none;align-items:center;gap:9px;max-width:310px;box-shadow:0 8px 24px rgba(0,0,0,.4);font-family:var(--font-body)}
+.toast.show{display:flex;animation:tslide .28s ease}
+@keyframes tslide{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.err{border-color:rgba(224,85,85,.35)}
+.hosting-steps{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+.hs{background:var(--s2);border:1px solid var(--bdr2);border-radius:var(--r);padding:14px 16px;display:flex;gap:13px}
+.hs-num{width:28px;height:28px;border-radius:50%;background:rgba(200,168,75,.15);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.hs-title{font-size:13px;font-weight:500;margin-bottom:4px}
+.hs-desc{font-size:12px;color:var(--t2);line-height:1.6}
+.hs-code{font-family:monospace;background:var(--dark);border:1px solid var(--bdr2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--gold2);margin-top:6px}
+.link-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--bdr2);border-radius:20px;font-size:11.5px;color:var(--blu2);cursor:pointer;text-decoration:none;margin-top:4px}
+.link-pill:hover{background:rgba(91,127,232,.1)}
+</style>
+</head>
+<body>
+<div id="login-screen">
+  <div class="login-bg"></div>
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">Q</div>
+      <div class="login-logo-name">Q2T MEDIA</div>
+      <div class="login-logo-sub">Analytics Platform</div>
+    </div>
+    <div class="login-title">Đăng nhập vào hệ thống</div>
+    <div class="fg"><label class="fl">Tên đăng nhập</label><input class="fl-input" id="li-user" placeholder="admin" autocomplete="username"></div>
+    <div class="fg"><label class="fl">Mật khẩu</label><input class="fl-input" id="li-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="login-err" id="login-err"></div>
+    <button class="btn-login" onclick="doLogin()">Đăng nhập</button>
+    <div class="login-hint">Tài khoản demo: <span>admin</span> / <span>q2t2024</span><br>Nhân viên: <span>nhanvien</span> / <span>nv2024</span></div>
+  </div>
+</div>
+<div id="app">
+  <aside class="sb">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">Q</div>
+      <div><div class="sb-logo-text">Q2T MEDIA</div><div class="sb-logo-sub">Analytics Platform</div></div>
+    </div>
+    <div class="sb-api" onclick="showToast('Facebook Graph API v20.0 — Đang kết nối...')">
+      <span class="sb-dot"></span><span style="flex:1">Facebook API</span><i class="ti ti-plug" style="font-size:12px;color:var(--t3)"></i>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-sec">Tổng quan</div>
+      <div class="sb-item on" onclick="gotoPage('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
+      <div class="sb-item" onclick="gotoPage('fanpage',this)"><i class="ti ti-brand-facebook"></i>Quản lý Fanpage<span class="sb-badge" id="badge-pages">12</span></div>
+      <div class="sb-sec">Phân tích</div>
+      <div class="sb-item" onclick="gotoPage('views',this)"><i class="ti ti-eye"></i>Thống kê Views</div>
+      <div class="sb-item" onclick="gotoPage('revenue',this)"><i class="ti ti-chart-bar"></i>Doanh thu</div>
+      <div class="sb-sec">Quản lý</div>
+      <div class="sb-item" onclick="gotoPage('staff',this)"><i class="ti ti-users"></i>Nhân sự</div>
+      <div class="sb-item" onclick="gotoPage('hosting',this)"><i class="ti ti-cloud-upload"></i>Đưa lên Hosting</div>
+      <div class="sb-item" onclick="gotoPage('settings',this)"><i class="ti ti-settings"></i>Cài đặt API</div>
+    </nav>
+    <div class="sb-bottom">
+      <div class="sb-user" onclick="doLogout()">
+        <div class="sb-av" id="sb-av">AD</div>
+        <div><div class="sb-uname" id="sb-uname">Admin Q2T</div><div class="sb-urole" id="sb-urole">Super Administrator</div></div>
+        <i class="ti ti-logout" style="margin-left:auto;color:var(--t3);font-size:14px"></i>
+      </div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-r">
+        <div class="period-tabs">
+          <div class="ptab on" onclick="changePeriod('Ngày',this)">Ngày</div>
+          <div class="ptab" onclick="changePeriod('Tuần',this)">Tuần</div>
+          <div class="ptab" onclick="changePeriod('Tháng',this)">Tháng</div>
+          <div class="ptab" onclick="changePeriod('Năm',this)">Năm</div>
+        </div>
+        <div class="ico-btn" onclick="doRefresh()" title="Làm mới"><i class="ti ti-refresh"></i></div>
+        <div class="ico-btn" title="Xuất báo cáo" onclick="showToast('Đang xuất báo cáo...')"><i class="ti ti-download"></i></div>
+        <div class="ico-btn" title="Thông báo"><i class="ti ti-bell"></i><span class="red-dot"></span></div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="panel on" id="panel-dashboard">
+        <div class="sg">
+          <div class="sc" onclick="gotoPage('views',document.querySelector('[onclick*=views]'))"><div class="sc-icon g"><i class="ti ti-eye"></i></div><div class="sc-lbl">Tổng Views</div><div class="sc-val" id="v-views">2.84M</div><div class="sc-sub"><span class="up">▲ 18.4%</span>so với kỳ trước</div></div>
+          <div class="sc" onclick="gotoPage('fanpage',document.querySelector('[onclick*=fanpage]'))"><div class="sc-icon b"><i class="ti ti-brand-facebook"></i></div><div class="sc-lbl">Số Fanpage</div><div class="sc-val" id="v-pages">12</div><div class="sc-sub"><span class="up">+2</span>trang mới tháng này</div></div>
+          <div class="sc"><div class="sc-icon n"><i class="ti ti-users"></i></div><div class="sc-lbl">Tổng Followers</div><div class="sc-val" id="v-fol">1.27M</div><div class="sc-sub"><span class="up">▲ 12.1%</span>tăng trưởng</div></div>
+          <div class="sc" onclick="gotoPage('staff',document.querySelector('[onclick*=staff]'))"><div class="sc-icon p"><i class="ti ti-id-badge"></i></div><div class="sc-lbl">Nhân sự</div><div class="sc-val" id="v-staff-count">9</div><div class="sc-sub"><span style="color:var(--grn)">●</span><span id="v-online-count">6</span> đang online</div></div>
+        </div>
+        <div class="charts-row">
+          <div class="card">
+            <div class="card-hdr"><div><div class="card-title">Xu hướng Views & Followers</div><div class="card-sub" id="chart-lbl">7 ngày gần nhất · Tất cả fanpage</div></div><div style="display:flex;gap:14px;font-size:12px;color:var(--t2)"><span><span style="color:var(--gold)">●</span> Views</span><span><span style="color:var(--blu2)">●</span> Followers</span></div></div>
+            <div style="height:170px;position:relative"><canvas id="c-main"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-hdr"><div class="card-title">Danh mục</div></div>
+            <div style="height:145px;position:relative"><canvas id="c-pie"></canvas></div>
+            <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2)"><span><span style="color:var(--gold)">●</span> Giải trí</span><span>38%</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2)"><span><span style="color:var(--blu2)">●</span> Tin tức</span><span>27%</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2)"><span><span style="color:var(--grn)">●</span> Thương mại</span><span>21%</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2)"><span><span style="color:var(--pur)">●</span> Khác</span><span>14%</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="sec-hdr">
+          <div class="sec-title"><i class="ti ti-crown"></i>Top Fanpage Hiệu Quả</div>
+          <div style="display:flex;gap:7px"><button class="btn btn-out" onclick="gotoPage('fanpage',document.querySelector('[onclick*=fanpage]'))">Xem tất cả</button><button class="btn btn-gold" onclick="openAddPage()"><i class="ti ti-plus"></i>Thêm Fanpage</button></div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden"><div class="tbl-wrap"><table><thead><tr><th>Fanpage</th><th>Followers</th><th>Views</th><th>Tăng trưởng</th><th>Reach</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="tbl-top"></tbody></table></div></div>
+      </div>
+      <div class="panel" id="panel-fanpage">
+        <div class="sec-hdr">
+          <div class="sec-title"><i class="ti ti-brand-facebook"></i>Danh sách Fanpage (<span id="fp-count">12</span>)</div>
+          <div style="display:flex;gap:7px;align-items:center"><input class="fi" placeholder="🔍  Tìm kiếm..." style="width:190px;padding:8px 12px;font-size:12.5px" oninput="filterFP(this.value)"><button class="btn btn-gold" onclick="openAddPage()"><i class="ti ti-plus"></i>Kết nối Fanpage</button></div>
+        </div>
+        <div class="fp-grid" id="fp-grid"></div>
+      </div>
+      <div class="panel" id="panel-views">
+        <div class="sg">
+          <div class="sc"><div class="sc-icon g"><i class="ti ti-calendar-day"></i></div><div class="sc-lbl">Hôm nay</div><div class="sc-val">148K</div><div class="sc-sub"><span class="up">▲ 22%</span></div></div>
+          <div class="sc"><div class="sc-icon b"><i class="ti ti-calendar-week"></i></div><div class="sc-lbl">Tuần này</div><div class="sc-val">896K</div><div class="sc-sub"><span class="up">▲ 18%</span></div></div>
+          <div class="sc"><div class="sc-icon n"><i class="ti ti-calendar-month"></i></div><div class="sc-lbl">Tháng này</div><div class="sc-val">2.84M</div><div class="sc-sub"><span class="up">▲ 31%</span></div></div>
+          <div class="sc"><div class="sc-icon p"><i class="ti ti-calendar"></i></div><div class="sc-lbl">Năm nay</div><div class="sc-val">18.9M</div><div class="sc-sub"><span class="up">▲ 145%</span></div></div>
+        </div>
+        <div class="card"><div class="card-hdr"><div><div class="card-title">Biểu đồ Views chi tiết</div><div class="card-sub">30 ngày gần nhất · Tất cả fanpage</div></div></div><div style="height:240px;position:relative"><canvas id="c-views"></canvas></div></div>
+      </div>
+      <div class="panel" id="panel-revenue">
+        <div class="sg">
+          <div class="sc"><div class="sc-icon g"><i class="ti ti-currency-dollar"></i></div><div class="sc-lbl">Doanh thu tháng</div><div class="sc-val">142M₫</div><div class="sc-sub"><span class="up">▲ 28%</span></div></div>
+          <div class="sc"><div class="sc-icon n"><i class="ti ti-ad"></i></div><div class="sc-lbl">Thu từ quảng cáo</div><div class="sc-val">98M₫</div><div class="sc-sub"><span class="up">▲ 34%</span></div></div>
+          <div class="sc"><div class="sc-icon b"><i class="ti ti-award"></i></div><div class="sc-lbl">Thu từ sponsor</div><div class="sc-val">44M₫</div><div class="sc-sub"><span class="up">▲ 18%</span></div></div>
+          <div class="sc"><div class="sc-icon p"><i class="ti ti-trending-up"></i></div><div class="sc-lbl">Dự báo năm</div><div class="sc-val">1.8T₫</div><div class="sc-sub"><span class="up">▲ 56%</span></div></div>
+        </div>
+        <div class="card"><div class="card-hdr"><div class="card-title">Doanh thu theo tháng</div></div><div style="height:240px;position:relative"><canvas id="c-rev"></canvas></div></div>
+      </div>
+      <div class="panel" id="panel-staff">
+        <div class="sec-hdr">
+          <div class="sec-title"><i class="ti ti-users"></i>Quản lý Nhân sự (<span id="staff-count-lbl">9</span>)</div>
+          <div style="display:flex;gap:7px;align-items:center">
+            <select class="fs" style="width:155px;padding:8px 11px;font-size:12.5px" onchange="filterStaff(this.value)"><option value="">Tất cả vai trò</option><option>Content Creator</option><option>Manager</option><option>Editor</option><option>Analyst</option></select>
+            <button class="btn btn-gold" onclick="openAddStaff()"><i class="ti ti-user-plus"></i>Thêm nhân sự</button>
+          </div>
+        </div>
+        <div class="staff-grid" id="staff-grid"></div>
+      </div>
+      <div class="panel" id="panel-hosting">
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-hdr"><div><div class="card-title">Đưa ứng dụng lên Internet</div><div class="card-sub">Để cả team truy cập từ bất cứ đâu — miễn phí 100%</div></div></div>
+          <div class="hosting-steps">
+            <div class="hs"><div class="hs-num">1</div><div><div class="hs-title">Tạo tài khoản GitHub</div><div class="hs-desc">Vào <strong style="color:var(--gold2)">github.com</strong> → Sign up → Xác nhận email.</div><a class="link-pill" href="https://github.com" target="_blank"><i class="ti ti-external-link"></i> Mở github.com</a></div></div>
+            <div class="hs"><div class="hs-num">2</div><div><div class="hs-title">Upload file index.html lên GitHub</div><div class="hs-desc">Tạo Repository tên <strong>q2t-media</strong> → "uploading an existing file" → kéo thả file vào → "Commit changes"</div></div></div>
+            <div class="hs"><div class="hs-num">3</div><div><div class="hs-title">Deploy lên Vercel (miễn phí)</div><div class="hs-desc">Vào <strong style="color:var(--gold2)">vercel.com</strong> → Sign up with GitHub → New Project → chọn repo → Deploy</div><a class="link-pill" href="https://vercel.com" target="_blank"><i class="ti ti-external-link"></i> Mở vercel.com</a></div></div>
+            <div class="hs"><div class="hs-num">4</div><div><div class="hs-title">Website của bạn live!</div><div class="hs-desc">Vercel tạo địa chỉ: <strong style="color:var(--gold2)">q2t-media.vercel.app</strong> — chia sẻ link cho cả team</div><div class="hs-code">https://q2t-media-abc123.vercel.app</div></div></div>
+            <div class="hs"><div class="hs-num">5</div><div><div class="hs-title">Tên miền riêng (tuỳ chọn)</div><div class="hs-desc">Mua tại <strong style="color:var(--gold2)">inet.vn</strong> (~200k/năm) → Vercel → Settings → Domains → thêm vào</div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div><div class="card-title">Tài khoản đăng nhập</div><div class="card-sub">Thêm / xoá tài khoản nhân viên</div></div><button class="btn btn-gold" onclick="openAddUser()"><i class="ti ti-user-plus"></i>Thêm tài khoản</button></div>
+          <table><thead><tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Vai trò</th><th>Thao tác</th></tr></thead><tbody id="user-tbl"></tbody></table>
+        </div>
+      </div>
+      <div class="panel" id="panel-settings">
+        <div style="max-width:560px"><div class="card">
+          <div class="card-hdr"><div class="card-title">Facebook Graph API</div></div>
+          <div class="fg"><label class="fl">App ID</label><input class="fi" value="1234567890123456"></div>
+          <div class="fg"><label class="fl">App Secret</label><input class="fi" type="password" value="abcdef1234567890"></div>
+          <div class="fg"><label class="fl">Page Access Token</label><input class="fi" value="EAABcDEfgh..."></div>
+          <div style="display:flex;align-items:center;gap:9px;padding:11px 13px;background:rgba(61,200,122,.07);border:1px solid rgba(61,200,122,.22);border-radius:9px;font-size:13px;margin-bottom:14px"><span style="color:var(--grn);font-size:16px">●</span>Đã kết nối Facebook Graph API v20.0</div>
+          <div style="display:flex;gap:8px"><button class="btn btn-gold" onclick="showToast('Lưu cài đặt thành công!')">Lưu cài đặt</button><button class="btn btn-out" onclick="showToast('Kết nối API thành công!')">Kiểm tra kết nối</button></div>
+        </div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="m-page">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="m-page-title">Thêm Fanpage</div><button class="close-btn" onclick="closeModal('m-page')"><i class="ti ti-x"></i></button></div>
+    <input type="hidden" id="edit-page-idx" value="">
+    <div class="fg"><label class="fl">Tên Fanpage</label><input class="fi" id="fp-name" placeholder="Q2T Entertainment"></div>
+    <div class="fg"><label class="fl">Emoji đại diện</label><input class="fi" id="fp-emoji" placeholder="🎬" style="font-size:18px"></div>
+    <div class="fg"><label class="fl">Danh mục</label><select class="fs" id="fp-cat"><option>Giải trí</option><option>Tin tức</option><option>Thương mại</option><option>Công nghệ</option><option>Thể thao</option><option>Ẩm thực</option><option>Sức khỏe</option><option>Làm đẹp</option><option>Khác</option></select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fg"><label class="fl">Followers</label><input class="fi" id="fp-followers" placeholder="0"></div>
+      <div class="fg"><label class="fl">Views</label><input class="fi" id="fp-views" placeholder="0"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fg"><label class="fl">Tăng trưởng</label><input class="fi" id="fp-trend" placeholder="+0%"></div>
+      <div class="fg"><label class="fl">Reach (%)</label><input class="fi" id="fp-reach" type="number" min="0" max="100" placeholder="50"></div>
+    </div>
+    <div class="fg"><label class="fl">Nhân sự phụ trách</label><input class="fi" id="fp-manager" placeholder="Nguyễn Văn A"></div>
+    <div class="fg"><label class="fl">Trạng thái</label><select class="fs" id="fp-status"><option value="active">Hoạt động</option><option value="paused">Tạm dừng</option></select></div>
+    <div class="btn-row"><button class="btn btn-out" onclick="closeModal('m-page')">Hủy</button><button class="btn btn-gold" onclick="savePage()">Lưu Fanpage</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="m-staff">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="m-staff-title">Thêm Nhân sự</div><button class="close-btn" onclick="closeModal('m-staff')"><i class="ti ti-x"></i></button></div>
+    <input type="hidden" id="edit-staff-idx" value="">
+    <div class="fg"><label class="fl">Họ và tên</label><input class="fi" id="s-name" placeholder="Nguyễn Văn A"></div>
+    <div class="fg"><label class="fl">Vai trò</label><select class="fs" id="s-role"><option>Content Creator</option><option>Manager</option><option>Editor</option><option>Analyst</option></select></div>
+    <div class="fg"><label class="fl">Email nội bộ</label><input class="fi" id="s-email" placeholder="email@q2tmedia.vn"></div>
+    <div class="fg"><label class="fl">Số fanpage quản lý</label><input class="fi" id="s-pages" type="number" min="0" placeholder="0"></div>
+    <div class="fg"><label class="fl">Màu sắc đại diện</label><select class="fs" id="s-color"><option value="#C8A84B">Vàng gold</option><option value="#5B7FE8">Xanh dương</option><option value="#3DC87A">Xanh lá</option><option value="#9370DB">Tím</option><option value="#E05555">Đỏ</option><option value="#E5C97A">Vàng nhạt</option></select></div>
+    <div class="fg"><label class="fl">Trạng thái</label><select class="fs" id="s-online"><option value="true">Online</option><option value="false">Offline</option></select></div>
+    <div class="btn-row"><button class="btn btn-out" onclick="closeModal('m-staff')">Hủy</button><button class="btn btn-gold" onclick="saveStaff()">Lưu nhân sự</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="m-user">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">Thêm tài khoản đăng nhập</div><button class="close-btn" onclick="closeModal('m-user')"><i class="ti ti-x"></i></button></div>
+    <div class="fg"><label class="fl">Tên đăng nhập</label><input class="fi" id="u-username" placeholder="nhanvien01"></div>
+    <div class="fg"><label class="fl">Mật khẩu</label><input class="fi" id="u-password" type="password" placeholder="••••••••"></div>
+    <div class="fg"><label class="fl">Họ và tên</label><input class="fi" id="u-fullname" placeholder="Nguyễn Văn A"></div>
+    <div class="fg"><label class="fl">Vai trò</label><select class="fs" id="u-role"><option value="staff">Nhân viên</option><option value="admin">Admin</option></select></div>
+    <div class="btn-row"><button class="btn btn-out" onclick="closeModal('m-user')">Hủy</button><button class="btn btn-gold" onclick="saveUser()">Tạo tài khoản</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="m-confirm">
+  <div class="confirm-box">
+    <div class="confirm-icon"><i class="ti ti-trash"></i></div>
+    <div class="confirm-title" id="confirm-title">Xác nhận xoá</div>
+    <div class="confirm-msg" id="confirm-msg">Bạn có chắc muốn xoá không?</div>
+    <div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-out" onclick="closeModal('m-confirm')">Huỷ bỏ</button><button class="btn btn-red" id="confirm-ok-btn">Xoá ngay</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast-el">
+  <i class="ti ti-circle-check" style="color:var(--grn);font-size:17px;flex-shrink:0" id="toast-ico"></i>
+  <span id="toast-txt"></span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+let PAGES=[{name:'Q2T Entertainment',emoji:'🎬',cat:'Giải trí',followers:'485K',views:'892K',trend:'+24%',reach:78,status:'active',manager:'Minh Tuấn'},{name:'Q2T News VN',emoji:'📰',cat:'Tin tức',followers:'312K',views:'634K',trend:'+18%',reach:65,status:'active',manager:'Thu Hà'},{name:'Q2T Lifestyle',emoji:'✨',cat:'Phong cách sống',followers:'198K',views:'401K',trend:'+31%',reach:82,status:'active',manager:'Văn Khoa'},{name:'Q2T Tech Review',emoji:'💻',cat:'Công nghệ',followers:'156K',views:'298K',trend:'+12%',reach:58,status:'active',manager:'Quỳnh Anh'},{name:'Q2T Food & Travel',emoji:'🍜',cat:'Ẩm thực',followers:'134K',views:'256K',trend:'+28%',reach:71,status:'active',manager:'Thanh Bình'},{name:'Q2T Business',emoji:'💼',cat:'Kinh doanh',followers:'98K',views:'187K',trend:'+9%',reach:44,status:'paused',manager:'Hoàng Nam'},{name:'Q2T Gaming',emoji:'🎮',cat:'Giải trí',followers:'87K',views:'164K',trend:'+45%',reach:90,status:'active',manager:'Minh Tuấn'},{name:'Q2T Sports',emoji:'⚽',cat:'Thể thao',followers:'76K',views:'143K',trend:'+16%',reach:62,status:'active',manager:'Đức Anh'},{name:'Q2T Health',emoji:'💚',cat:'Sức khỏe',followers:'65K',views:'128K',trend:'+22%',reach:55,status:'active',manager:'Thu Hà'},{name:'Q2T Beauty',emoji:'💄',cat:'Làm đẹp',followers:'58K',views:'112K',trend:'+38%',reach:76,status:'active',manager:'Quỳnh Anh'},{name:'Q2T Kids',emoji:'🌈',cat:'Thiếu nhi',followers:'45K',views:'98K',trend:'+14%',reach:48,status:'paused',manager:'Thanh Bình'},{name:'Q2T Music',emoji:'🎵',cat:'Âm nhạc',followers:'38K',views:'82K',trend:'+52%',reach:85,status:'active',manager:'Hoàng Nam'}];
+let STAFF=[{name:'Nguyễn Minh Tuấn',role:'Manager',email:'tuan@q2tmedia.vn',pages:3,color:'#C8A84B',online:true},{name:'Trần Thu Hà',role:'Content Creator',email:'ha@q2tmedia.vn',pages:2,color:'#5B7FE8',online:true},{name:'Lê Văn Khoa',role:'Editor',email:'khoa@q2tmedia.vn',pages:1,color:'#3DC87A',online:false},{name:'Phạm Quỳnh Anh',role:'Content Creator',email:'anh@q2tmedia.vn',pages:2,color:'#9370DB',online:true},{name:'Nguyễn Thanh Bình',role:'Analyst',email:'binh@q2tmedia.vn',pages:2,color:'#E05555',online:true},{name:'Trần Hoàng Nam',role:'Manager',email:'nam@q2tmedia.vn',pages:2,color:'#E5C97A',online:false},{name:'Lê Đức Anh',role:'Content Creator',email:'ducanh@q2tmedia.vn',pages:1,color:'#5B7FE8',online:true},{name:'Vũ Thị Mai',role:'Editor',email:'mai@q2tmedia.vn',pages:1,color:'#3DC87A',online:true},{name:'Đỗ Quang Huy',role:'Analyst',email:'huy@q2tmedia.vn',pages:1,color:'#C8A84B',online:false}];
+let USERS=[{username:'admin',password:'q2t2024',fullname:'Admin Q2T',role:'admin'},{username:'nhanvien',password:'nv2024',fullname:'Nhân viên Demo',role:'staff'}];
+let currentUser=null;
+
+function doLogin(){
+  const u=document.getElementById('li-user').value.trim();
+  const p=document.getElementById('li-pass').value;
+  const found=USERS.find(x=>x.username===u&&x.password===p);
+  if(!found){document.getElementById('login-err').textContent='Tên đăng nhập hoặc mật khẩu không đúng!';document.getElementById('li-pass').value='';return;}
+  currentUser=found;
+  document.getElementById('login-err').textContent='';
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('sb-uname').textContent=found.fullname;
+  document.getElementById('sb-urole').textContent=found.role==='admin'?'Super Administrator':'Nhân viên';
+  document.getElementById('sb-av').textContent=found.fullname.split(' ').map(w=>w[0]).slice(-2).join('').toUpperCase();
+  renderAll();setTimeout(initCharts,100);showToast('Chào mừng '+found.fullname+'!');
+}
+function doLogout(){currentUser=null;document.getElementById('app').classList.remove('visible');document.getElementById('login-screen').style.display='flex';document.getElementById('li-user').value='';document.getElementById('li-pass').value='';}
+document.getElementById('li-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('li-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('li-pass').focus();});
+
+const PAGE_TITLES={dashboard:'Dashboard',fanpage:'Quản lý Fanpage',views:'Thống kê Views',revenue:'Doanh thu',staff:'Nhân sự',hosting:'Đưa lên Hosting',settings:'Cài đặt API'};
+function gotoPage(p,el){
+  document.querySelectorAll('.panel').forEach(d=>d.classList.remove('on'));
+  document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('on'));
+  document.getElementById('panel-'+p).classList.add('on');
+  if(el)el.classList.add('on');
+  else document.querySelectorAll('.sb-item').forEach(n=>{if((n.getAttribute('onclick')||'').includes("'"+p+"'"))n.classList.add('on');});
+  document.getElementById('page-title').textContent=PAGE_TITLES[p]||'Q2T MEDIA';
+  setTimeout(initCharts,80);
+}
+
+const PD={Ngày:{views:'148K',fol:'4.2K',lbl:'24 giờ gần nhất'},Tuần:{views:'896K',fol:'28K',lbl:'7 ngày gần nhất'},Tháng:{views:'2.84M',fol:'127K',lbl:'30 ngày gần nhất'},Năm:{views:'18.9M',fol:'1.27M',lbl:'12 tháng gần nhất'}};
+function changePeriod(p,el){
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));el.classList.add('on');
+  const d=PD[p];document.getElementById('v-views').textContent=d.views;document.getElementById('v-fol').textContent=d.fol;
+  const lbl=document.getElementById('chart-lbl');if(lbl)lbl.textContent=d.lbl+' · Tất cả fanpage';showToast('Đang xem: '+p);
+}
+function doRefresh(){showToast('Đang đồng bộ Facebook API...');setTimeout(()=>showToast('Cập nhật thành công!'),1400);}
+
+function renderAll(){renderTopTable();renderFP(PAGES);renderStaff(STAFF);renderUserTable();updateCounters();}
+function updateCounters(){
+  document.getElementById('v-pages').textContent=PAGES.length;
+  document.getElementById('badge-pages').textContent=PAGES.length;
+  document.getElementById('fp-count').textContent=PAGES.length;
+  document.getElementById('v-staff-count').textContent=STAFF.length;
+  document.getElementById('staff-count-lbl').textContent=STAFF.length;
+  document.getElementById('v-online-count').textContent=STAFF.filter(s=>s.online).length;
+}
+
+function renderTopTable(){
+  document.getElementById('tbl-top').innerHTML=PAGES.slice(0,5).map((p,i)=>`<tr><td><div class="pr"><div class="pt">${p.emoji}</div><div><div class="pn">${p.name}</div><div class="pc">${p.cat}</div></div></div></td><td style="font-weight:500">${p.followers}</td><td style="font-weight:500">${p.views}</td><td><span style="color:var(--grn);font-weight:600">${p.trend}</span></td><td><div class="pbar-w"><div class="pbar"><div class="pbar-f" style="width:${p.reach}%"></div></div><span style="font-size:11px;color:var(--t3)">${p.reach}%</span></div></td><td><span class="sdot ${p.status==='active'?'act':'pau'}"></span>${p.status==='active'?'Hoạt động':'Tạm dừng'}</td><td style="display:flex;gap:5px"><button class="tbl-edit-btn" onclick="openEditPage(${i})"><i class="ti ti-edit" style="font-size:11px"></i> Sửa</button><button class="tbl-del-btn" onclick="confirmDeletePage(${i})"><i class="ti ti-trash" style="font-size:11px"></i></button></td></tr>`).join('');
+}
+
+function renderFP(list){
+  document.getElementById('fp-grid').innerHTML=list.map(p=>{const ri=PAGES.indexOf(p);return`<div class="fp-card"><div class="fp-actions"><button class="fp-act-btn fp-act-edit" onclick="openEditPage(${ri})"><i class="ti ti-edit"></i></button><button class="fp-act-btn fp-act-del" onclick="confirmDeletePage(${ri})"><i class="ti ti-trash"></i></button></div><div style="display:flex;align-items:center;gap:9px;margin-bottom:10px;padding-right:56px"><div class="pt" style="width:40px;height:40px;font-size:19px">${p.emoji}</div><div style="min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div><div style="font-size:11px;color:var(--t3)">${p.cat}</div></div><span class="sdot ${p.status==='active'?'act':'pau'}" style="margin-left:auto;flex-shrink:0"></span></div><div class="fp-meta"><div class="fp-stat"><div class="fp-sl">Followers</div><div class="fp-sv" style="color:var(--gold)">${p.followers}</div></div><div class="fp-stat"><div class="fp-sl">Views</div><div class="fp-sv" style="color:var(--blu2)">${p.views}</div></div></div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3)"><span><i class="ti ti-user" style="font-size:11px"></i> ${p.manager}</span><span style="color:var(--grn);font-weight:600">${p.trend}</span></div></div>`;}).join('');
+}
+function filterFP(q){renderFP(q?PAGES.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||p.cat.toLowerCase().includes(q.toLowerCase())):PAGES);}
+
+function renderStaff(list){
+  document.getElementById('staff-grid').innerHTML=list.map(s=>{const ri=STAFF.indexOf(s);const init=s.name.split(' ').map(w=>w[0]).slice(-2).join('').toUpperCase();return`<div class="staff-card"><div class="staff-av" style="background:${s.color}22;color:${s.color}">${init}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${s.name}</div><div style="font-size:11px;color:var(--t3)">${s.role}</div><div style="font-size:11px;color:var(--gold);margin-top:3px"><i class="ti ti-brand-facebook" style="font-size:10px"></i> ${s.pages} fanpage</div></div><div class="odot ${s.online?'on':'off'}"></div><div class="staff-acts"><button class="fp-act-btn fp-act-edit" onclick="openEditStaff(${ri})"><i class="ti ti-edit"></i></button><button class="fp-act-btn fp-act-del" onclick="confirmDeleteStaff(${ri})"><i class="ti ti-trash"></i></button></div></div>`;}).join('');
+}
+function filterStaff(role){renderStaff(role?STAFF.filter(s=>s.role===role):STAFF);}
+
+function renderUserTable(){
+  document.getElementById('user-tbl').innerHTML=USERS.map((u,i)=>`<tr><td style="font-weight:500;font-family:monospace;font-size:13px">${u.username}</td><td>${u.fullname}</td><td><span style="padding:3px 8px;border-radius:6px;font-size:11px;${u.role==='admin'?'background:rgba(200,168,75,.15);color:var(--gold)':'background:rgba(91,127,232,.12);color:var(--blu2)'}">${u.role==='admin'?'Admin':'Nhân viên'}</span></td><td>${u.username!=='admin'?`<button class="tbl-del-btn" onclick="confirmDeleteUser(${i})"><i class="ti ti-trash" style="font-size:11px"></i> Xoá</button>`:'<span style="font-size:11px;color:var(--t3)">Không thể xoá</span>'}</td></tr>`).join('');
+}
+
+function openAddPage(){document.getElementById('m-page-title').textContent='Thêm Fanpage mới';document.getElementById('edit-page-idx').value='';['fp-name','fp-emoji','fp-followers','fp-views','fp-trend','fp-manager'].forEach(id=>document.getElementById(id).value='');document.getElementById('fp-reach').value='50';document.getElementById('fp-status').value='active';document.getElementById('fp-cat').value='Giải trí';showModal('m-page');}
+function openEditPage(idx){const p=PAGES[idx];document.getElementById('m-page-title').textContent='Chỉnh sửa Fanpage';document.getElementById('edit-page-idx').value=idx;document.getElementById('fp-name').value=p.name;document.getElementById('fp-emoji').value=p.emoji;document.getElementById('fp-cat').value=p.cat;document.getElementById('fp-followers').value=p.followers;document.getElementById('fp-views').value=p.views;document.getElementById('fp-trend').value=p.trend;document.getElementById('fp-reach').value=p.reach;document.getElementById('fp-manager').value=p.manager;document.getElementById('fp-status').value=p.status;showModal('m-page');}
+function savePage(){const idx=document.getElementById('edit-page-idx').value;const obj={name:document.getElementById('fp-name').value||'Fanpage mới',emoji:document.getElementById('fp-emoji').value||'📄',cat:document.getElementById('fp-cat').value,followers:document.getElementById('fp-followers').value||'0',views:document.getElementById('fp-views').value||'0',trend:document.getElementById('fp-trend').value||'+0%',reach:parseInt(document.getElementById('fp-reach').value)||0,manager:document.getElementById('fp-manager').value||'Admin',status:document.getElementById('fp-status').value};if(idx===''){PAGES.push(obj);showToast('Đã thêm fanpage thành công!');}else{PAGES[parseInt(idx)]=obj;showToast('Đã cập nhật fanpage!');}closeModal('m-page');renderAll();}
+function confirmDeletePage(idx){document.getElementById('confirm-title').textContent='Xoá Fanpage';document.getElementById('confirm-msg').textContent=`Bạn có chắc muốn xoá "${PAGES[idx].name}"?`;document.getElementById('confirm-ok-btn').onclick=()=>{PAGES.splice(idx,1);closeModal('m-confirm');renderAll();showToast('Đã xoá fanpage!','err');};showModal('m-confirm');}
+
+function openAddStaff(){document.getElementById('m-staff-title').textContent='Thêm Nhân sự mới';document.getElementById('edit-staff-idx').value='';['s-name','s-email'].forEach(id=>document.getElementById(id).value='');document.getElementById('s-pages').value='0';document.getElementById('s-role').value='Content Creator';document.getElementById('s-color').value='#C8A84B';document.getElementById('s-online').value='true';showModal('m-staff');}
+function openEditStaff(idx){const s=STAFF[idx];document.getElementById('m-staff-title').textContent='Chỉnh sửa Nhân sự';document.getElementById('edit-staff-idx').value=idx;document.getElementById('s-name').value=s.name;document.getElementById('s-role').value=s.role;document.getElementById('s-email').value=s.email||'';document.getElementById('s-pages').value=s.pages;document.getElementById('s-color').value=s.color;document.getElementById('s-online').value=s.online?'true':'false';showModal('m-staff');}
+function saveStaff(){const idx=document.getElementById('edit-staff-idx').value;const obj={name:document.getElementById('s-name').value||'Nhân viên mới',role:document.getElementById('s-role').value,email:document.getElementById('s-email').value,pages:parseInt(document.getElementById('s-pages').value)||0,color:document.getElementById('s-color').value,online:document.getElementById('s-online').value==='true'};if(idx===''){STAFF.unshift(obj);showToast('Đã thêm nhân sự thành công!');}else{STAFF[parseInt(idx)]=obj;showToast('Đã cập nhật nhân sự!');}closeModal('m-staff');renderAll();}
+function confirmDeleteStaff(idx){document.getElementById('confirm-title').textContent='Xoá Nhân sự';document.getElementById('confirm-msg').textContent=`Bạn có chắc muốn xoá "${STAFF[idx].name}"?`;document.getElementById('confirm-ok-btn').onclick=()=>{STAFF.splice(idx,1);closeModal('m-confirm');renderAll();showToast('Đã xoá nhân sự!','err');};showModal('m-confirm');}
+
+function openAddUser(){['u-username','u-password','u-fullname'].forEach(id=>document.getElementById(id).value='');document.getElementById('u-role').value='staff';showModal('m-user');}
+function saveUser(){const uname=document.getElementById('u-username').value.trim();const pass=document.getElementById('u-password').value;const full=document.getElementById('u-fullname').value.trim();const role=document.getElementById('u-role').value;if(!uname||!pass||!full){showToast('Vui lòng điền đầy đủ thông tin!','err');return;}if(USERS.find(u=>u.username===uname)){showToast('Tên đăng nhập đã tồn tại!','err');return;}USERS.push({username:uname,password:pass,fullname:full,role});closeModal('m-user');renderUserTable();showToast('Đã tạo tài khoản '+uname+'!');}
+function confirmDeleteUser(idx){document.getElementById('confirm-title').textContent='Xoá tài khoản';document.getElementById('confirm-msg').textContent=`Bạn có chắc muốn xoá tài khoản "${USERS[idx].username}"?`;document.getElementById('confirm-ok-btn').onclick=()=>{USERS.splice(idx,1);closeModal('m-confirm');renderUserTable();showToast('Đã xoá tài khoản!','err');};showModal('m-confirm');}
+
+const charts={};
+const GO={color:'rgba(255,255,255,0.045)'};
+const TO={color:'#636070',font:{size:11,family:'Outfit'}};
+function mkChart(id,cfg){if(charts[id])charts[id].destroy();const el=document.getElementById(id);if(!el)return;charts[id]=new Chart(el,cfg);}
+function initCharts(){
+  const d7=['10/5','11/5','12/5','13/5','14/5','15/5','16/5'];
+  mkChart('c-main',{type:'line',data:{labels:d7,datasets:[{label:'Views',data:[420,510,480,620,590,710,680],borderColor:'#C8A84B',backgroundColor:'rgba(200,168,75,0.07)',fill:true,tension:.42,pointRadius:3,pointBackgroundColor:'#C8A84B',borderWidth:2},{label:'Followers',data:[200,210,215,230,225,248,260],borderColor:'#5B7FE8',backgroundColor:'rgba(91,127,232,0.06)',fill:true,tension:.42,pointRadius:3,pointBackgroundColor:'#5B7FE8',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:TO,grid:GO},y:{ticks:TO,grid:GO}}}});
+  mkChart('c-pie',{type:'doughnut',data:{labels:['Giải trí','Tin tức','Thương mại','Khác'],datasets:[{data:[38,27,21,14],backgroundColor:['#C8A84B','#5B7FE8','#3DC87A','#9370DB'],borderWidth:0,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false}}}});
+  const d30=Array.from({length:30},(_,i)=>{const d=new Date('2025-04-18');d.setDate(d.getDate()+i);return`${d.getDate()}/${d.getMonth()+1}`});
+  mkChart('c-views',{type:'bar',data:{labels:d30,datasets:[{data:d30.map(()=>Math.round(55+Math.random()*145)),backgroundColor:'rgba(200,168,75,0.7)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{...TO,maxTicksLimit:10,maxRotation:0},grid:{display:false}},y:{ticks:TO,grid:GO}}}});
+  mkChart('c-rev',{type:'bar',data:{labels:['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],datasets:[{label:'Quảng cáo',data:[65,72,58,80,98,0,0,0,0,0,0,0],backgroundColor:'#C8A84B',borderRadius:5,borderSkipped:false},{label:'Sponsor',data:[28,32,25,38,44,0,0,0,0,0,0,0],backgroundColor:'#5B7FE8',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:TO,grid:{display:false}},y:{stacked:true,ticks:TO,grid:GO}}}});
+}
+
+function showModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('show'));});
+
+let toastTmr;
+function showToast(msg,type){const el=document.getElementById('toast-el');const ico=document.getElementById('toast-ico');document.getElementById('toast-txt').textContent=msg;el.className='toast show'+(type==='err'?' err':'');ico.style.color=type==='err'?'var(--red)':'var(--grn)';ico.className=type==='err'?'ti ti-alert-circle':'ti ti-circle-check';clearTimeout(toastTmr);toastTmr=setTimeout(()=>el.classList.remove('show'),3000);}
+</script>
+</body>
+</html>
