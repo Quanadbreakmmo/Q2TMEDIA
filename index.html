@@ -935,7 +935,7 @@ function renderToks(){
         <button class="ha ha-d" onclick="cfDel('token','${t.id}','token này')"><i class="ti ti-trash"></i></button>
       </div>
       <input class="fi" value="${t.token||''}" type="password" placeholder="Dán Page Access Token vào đây..." style="font-size:12px" onchange="updTok('${t.id}','token',this.value)" onblur="autoDetectPage('${t.id}',this.value)">
-      ${t.status==='err'?'<div style="font-size:11px;color:var(--red);margin-top:5px">⚠️ Token không hợp lệ hoặc thiếu quyền pages_read_engagement</div>':''}
+      ${t.status==='err'?'<div style="font-size:11px;color:var(--red);margin-top:5px">⚠️ Token lỗi — thử lấy token mới tại Graph Explorer</div>':''}
     </div>`).join('');
 }
 
@@ -964,7 +964,7 @@ window.syncAll=async function(){
   const now=new Date().toLocaleTimeString('vi-VN');
 
   for(const t of TOKENS){
-    if(!t.token)continue;
+    if(!t.token||t.token.length<20)continue;
     try{
       // Dùng page_id nếu có, không thì dùng /me
       const endpoint=t.page_id?t.page_id:'me';
@@ -1077,44 +1077,60 @@ window.fetchRev=async function(){
 };
 window.addTok=async function(){await addDoc(tCol,{name:'Đang nhận diện...',page_id:'',token:'',status:'pend'});};
 
-// Tự động nhận diện page từ token — không cần nhập tay
+// Tự động nhận diện page từ token
 window.autoDetectPage=async function(id,token){
   if(!token||token.length<20)return;
   const t=TOKENS.find(x=>x.id===id);
   if(!t)return;
   try{
-    // Lấy thông tin page từ token
-    const r=await fetch(`https://graph.facebook.com/v20.0/me/accounts?access_token=${token}`);
+    // Bước 1: Thử lấy danh sách page từ User Token
+    const r=await fetch(`https://graph.facebook.com/v20.0/me/accounts?fields=name,id,access_token,fan_count&access_token=${token}`);
     const d=await r.json();
+
     if(d.error){
-      await setDoc(doc(db,'tokens',id),{...t,token,status:'err',name:'Token lỗi'});
-      toast('Token lỗi: '+d.error.message,'err');
+      // Bước 2: Thử dùng như Page Token trực tiếp
+      const r2=await fetch(`https://graph.facebook.com/v20.0/me?fields=name,id,fan_count,followers_count&access_token=${token}`);
+      const d2=await r2.json();
+      if(d2.error){
+        await setDoc(doc(db,'tokens',id),{...t,token,status:'err',name:'Token lỗi: '+d2.error.message});
+        toast('Token lỗi: '+d2.error.message,'err');
+        return;
+      }
+      // Page Token hợp lệ
+      await setDoc(doc(db,'tokens',id),{...t,token,name:d2.name||'Page',page_id:d2.id||'',status:'ok'});
+      toast('✓ Kết nối: '+d2.name);
       return;
     }
+
     if(d.data&&d.data.length>0){
-      // Token User — lấy page đầu tiên
-      const page=d.data[0];
-      await setDoc(doc(db,'tokens',id),{...t,token:page.access_token,name:page.name,page_id:page.id,status:'ok'});
-      toast('✓ Nhận diện được: '+page.name+' ('+d.data.length+' page)');
-      // Nếu có nhiều page → thêm tự động
-      if(d.data.length>1){
-        for(let i=1;i<d.data.length;i++){
-          const p=d.data[i];
-          await addDoc(tCol,{name:p.name,page_id:p.id,token:p.access_token,status:'ok'});
+      // User Token có page → lưu page đầu tiên, thêm các page còn lại
+      const first=d.data[0];
+      await setDoc(doc(db,'tokens',id),{
+        ...t,
+        token:first.access_token||token,
+        name:first.name,
+        page_id:first.id,
+        status:'ok'
+      });
+      // Tự động thêm các page còn lại
+      for(let i=1;i<d.data.length;i++){
+        const p=d.data[i];
+        const exists=TOKENS.find(x=>x.page_id===p.id);
+        if(!exists){
+          await addDoc(tCol,{name:p.name,page_id:p.id,token:p.access_token||token,status:'ok'});
         }
-        toast('✓ Tự động thêm '+d.data.length+' page từ token!');
       }
+      toast('✓ Nhận diện '+d.data.length+' page từ tài khoản của bạn!');
     } else {
-      // Token Page trực tiếp
-      const r2=await fetch(`https://graph.facebook.com/v20.0/me?fields=name,id&access_token=${token}`);
-      const d2=await r2.json();
-      if(d2.error){await setDoc(doc(db,'tokens',id),{...t,token,status:'err',name:'Token lỗi'});return;}
-      await setDoc(doc(db,'tokens',id),{...t,token,name:d2.name||'Page',page_id:d2.id||'',status:'ok'});
-      toast('✓ Kết nối thành công: '+d2.name);
+      // User Token nhưng không có page nào
+      const r3=await fetch(`https://graph.facebook.com/v20.0/me?fields=name,id&access_token=${token}`);
+      const d3=await r3.json();
+      await setDoc(doc(db,'tokens',id),{...t,token,name:d3.name||'User',page_id:d3.id||'',status:'ok'});
+      toast('✓ Đã xác thực tài khoản: '+d3.name+' (không tìm thấy page nào)');
     }
   }catch(e){
-    await setDoc(doc(db,'tokens',id),{...t,token,status:'err',name:'Lỗi kết nối'});
-    toast('Lỗi kết nối Facebook API','err');
+    await setDoc(doc(db,'tokens',id),{...t,token,status:'err',name:'Lỗi mạng'});
+    toast('Lỗi kết nối. Kiểm tra mạng internet.','err');
   }
 };
 window.updTok=async function(id,f,v){const t=TOKENS.find(x=>x.id===id);if(t)await setDoc(doc(db,'tokens',id),{...t,[f]:v});};
@@ -1122,7 +1138,7 @@ window.saveToks=function(){toast('Đã lưu tokens! Nhấn Sync để cập nh�
 window.testToks=async function(){
   toast('Đang test và nhận diện '+TOKENS.length+' token...');
   for(const t of TOKENS){
-    if(!t.token)continue;
+    if(!t.token||t.token.length<20)continue;
     await autoDetectPage(t.id,t.token);
   }
   toast('Xong! Kiểm tra trạng thái từng token.');
