@@ -2,9 +2,7 @@ name: Q2T Media — Sync Facebook Data
 
 on:
   schedule:
-    # Chạy mỗi 5 phút
     - cron: '*/5 * * * *'
-  # Cho phép chạy thủ công
   workflow_dispatch:
 
 jobs:
@@ -19,7 +17,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
@@ -28,7 +25,3 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node sync.js
-        
-      - name: Log result
-        if: always()
-        run: echo "Sync completed at $(date)"
