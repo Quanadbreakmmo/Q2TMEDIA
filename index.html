@@ -305,6 +305,7 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
       <div class="sb-item" onclick="go('staff',this)"><i class="ti ti-users"></i>Nhân sự<span class="sb-badge" id="b-staff">0</span></div>
       <div class="sb-item" onclick="go('notes',this)"><i class="ti ti-notes"></i>Ghi chú<span class="sb-badge" id="b-notes">0</span></div>
       <div class="sb-sec">Cài đặt</div>
+      <div class="sb-item" onclick="go('manual',this)"><i class="ti ti-edit"></i>Nhập liệu thủ công</div>
       <div class="sb-item" onclick="go('api',this)"><i class="ti ti-plug"></i>Kết nối API</div>
       <div class="sb-item" onclick="go('accounts',this)"><i class="ti ti-shield-lock"></i>Tài khoản</div>
     </nav>
@@ -448,7 +449,12 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
       <div class="panel" id="panel-api">
         <div class="api-sec">
           <div class="api-sec-t"><i class="ti ti-plug"></i>Page Access Token — Theo dõi từng Page</div>
-          <p style="font-size:12px;color:var(--t2);margin-bottom:12px;line-height:1.6">Lấy token tại <strong style="color:var(--brand3)">developers.facebook.com/tools/explorer</strong><br>Quyền cần: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;font-size:11px">pages_show_list · pages_read_engagement · read_insights · pages_read_user_content</code></p>
+          <p style="font-size:12px;color:var(--t2);margin-bottom:12px;line-height:1.7">
+  <strong style="color:var(--brand3)">Chỉ cần dán token vào — app tự nhận diện page!</strong><br>
+  Lấy token tại <span style="color:var(--brand3)">developers.facebook.com/tools/explorer</span><br>
+  Quyền cần tích: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;font-size:11px">pages_show_list · pages_read_engagement · read_insights</code><br>
+  <span style="color:var(--grn)">✓ Nếu dùng User Token → app tự lấy tất cả page bạn đang quản lý!</span>
+</p>
           <div id="token-list"></div>
           <div style="display:flex;gap:7px;margin-top:10px">
             <button class="btn btn-sky" onclick="addTok()"><i class="ti ti-plus"></i>Thêm token</button>
@@ -480,6 +486,96 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
             <div class="fg"><label class="fl">Cảnh báo khi reach giảm hơn (%)</label><input class="fi" id="al-reach" type="number" value="20" min="1" max="90"></div>
           </div>
           <button class="btn btn-b" onclick="toast('Đã lưu cài đặt cảnh báo!')"><i class="ti ti-device-floppy"></i>Lưu cài đặt</button>
+        </div>
+      </div>
+
+      <!-- NHẬP LIỆU THỦ CÔNG -->
+      <div class="panel" id="panel-manual">
+        <!-- Nhập số liệu page -->
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-hdr">
+            <div>
+              <div class="card-title">📊 Nhập số liệu từng Page</div>
+              <div class="card-sub">Cập nhật followers, reach, views thủ công — lưu cloud Firebase</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <select class="fs" style="width:200px;padding:7px 10px;font-size:12px" id="manual-page-sel" onchange="loadManualPage(this.value)">
+                <option value="">— Chọn page cần nhập —</option>
+              </select>
+            </div>
+          </div>
+          <div id="manual-page-form" style="display:none">
+            <input type="hidden" id="manual-page-id">
+            <div style="background:var(--s2);border-radius:10px;padding:14px;margin-bottom:12px">
+              <div style="font-size:12px;font-weight:600;color:var(--brand3);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-users"></i>Số liệu hôm nay</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+                <div class="fg"><label class="fl">Followers hiện tại</label><input class="fi" id="m-followers" type="number" placeholder="106000"></div>
+                <div class="fg"><label class="fl">Reach hôm nay</label><input class="fi" id="m-reach" type="number" placeholder="25000"></div>
+                <div class="fg"><label class="fl">Views hôm nay</label><input class="fi" id="m-views" type="number" placeholder="50000"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+                <div class="fg"><label class="fl">Followers tăng/giảm hôm nay</label><input class="fi" id="m-fol-change" type="number" placeholder="+500 hoặc -200"></div>
+                <div class="fg"><label class="fl">Tăng trưởng %</label><input class="fi" id="m-trend" placeholder="+2.4%"></div>
+                <div class="fg"><label class="fl">Trạng thái</label><select class="fs" id="m-status"><option value="active">🟢 Tốt</option><option value="warn">🟡 Cần chú ý</option><option value="error">🔴 Có vấn đề</option></select></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:7px">
+              <button class="btn btn-b" onclick="saveManualStats()"><i class="ti ti-device-floppy"></i>Lưu số liệu</button>
+              <button class="btn btn-out" onclick="document.getElementById('manual-page-form').style.display='none'">Huỷ</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nhập doanh thu -->
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-hdr">
+            <div>
+              <div class="card-title">💰 Nhập doanh thu từng Page</div>
+              <div class="card-sub">Nhập doanh thu $ thủ công theo tháng — lưu cloud Firebase</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <select class="fs" style="width:200px;padding:7px 10px;font-size:12px" id="rev-page-sel" onchange="loadRevPage(this.value)">
+                <option value="">— Chọn page cần nhập —</option>
+              </select>
+              <select class="fs" style="width:130px;padding:7px 10px;font-size:12px" id="rev-month-sel">
+                <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+                <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+                <option value="5" selected>Tháng 5</option><option value="6">Tháng 6</option>
+                <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+                <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+                <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+              </select>
+            </div>
+          </div>
+          <div id="rev-page-form" style="display:none">
+            <input type="hidden" id="rev-page-id">
+            <div style="background:var(--s2);border-radius:10px;padding:14px;margin-bottom:12px">
+              <div style="font-size:12px;font-weight:600;color:var(--grn);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-currency-dollar"></i>Doanh thu tháng này ($)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="fg"><label class="fl">In-stream Ads ($)</label><input class="fi" id="r-instream" type="number" step="0.01" placeholder="0.00"></div>
+                <div class="fg"><label class="fl">Reels Ads ($)</label><input class="fi" id="r-reels" type="number" step="0.01" placeholder="0.00"></div>
+                <div class="fg"><label class="fl">Stars ($)</label><input class="fi" id="r-stars" type="number" step="0.01" placeholder="0.00"></div>
+                <div class="fg"><label class="fl">Subscriptions ($)</label><input class="fi" id="r-subs" type="number" step="0.01" placeholder="0.00"></div>
+              </div>
+              <div style="background:var(--s3);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:12px;color:var(--t2)">Tổng doanh thu tháng này:</span>
+                <span style="font-size:18px;font-weight:700;color:var(--grn)" id="rev-total-preview">$0.00</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:7px">
+              <button class="btn btn-b" onclick="saveManualRev()"><i class="ti ti-device-floppy"></i>Lưu doanh thu</button>
+              <button class="btn btn-out" onclick="document.getElementById('rev-page-form').style.display='none'">Huỷ</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng tổng hợp -->
+        <div class="card">
+          <div class="card-hdr"><div class="card-title">📋 Tổng hợp số liệu đã nhập</div><button class="btn btn-b" onclick="go('health',document.querySelector('[onclick*=health]'))"><i class="ti ti-eye"></i>Xem sức khỏe page</button></div>
+          <table>
+            <thead><tr><th>Page</th><th>Followers</th><th>Reach</th><th>Views</th><th>Tăng trưởng</th><th>In-stream</th><th>Reels</th><th>Tổng DT</th><th>Cập nhật lúc</th></tr></thead>
+            <tbody id="manual-summary-tbl"></tbody>
+          </table>
         </div>
       </div>
 
@@ -646,7 +742,7 @@ document.getElementById('li-p').addEventListener('keydown',e=>{if(e.key==='Enter
 document.getElementById('li-u').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('li-p').focus();});
 
 // NAV
-const TITLES={dashboard:'Dashboard',health:'Sức khỏe từng Page',revenue:'Doanh thu Facebook',staff:'Quản lý Nhân sự',notes:'Ghi chú',api:'Kết nối API Facebook',accounts:'Quản lý Tài khoản'};
+const TITLES={dashboard:'Dashboard',health:'Sức khỏe từng Page',revenue:'Doanh thu Facebook',staff:'Quản lý Nhân sự',notes:'Ghi chú',manual:'Nhập liệu thủ công',api:'Kết nối API Facebook',accounts:'Quản lý Tài khoản'};
 window.go=function(p,el){
   document.querySelectorAll('.panel').forEach(d=>d.classList.remove('on'));
   document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('on'));
@@ -659,7 +755,7 @@ window.go=function(p,el){
 window.setPd=function(p,el){document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));el.classList.add('on');toast('Xem: '+p);};
 
 // RENDER ALL
-function renderAll(){renderTop();renderHGrid(PAGES);renderRevTbl();updCounters();updBadges();updNotePageSel();checkAlerts();}
+function renderAll(){renderTop();renderHGrid(PAGES);renderRevTbl();updCounters();updBadges();updNotePageSel();checkAlerts();updManualPageSels();renderManualSummary();}
 
 function updCounters(){
   document.getElementById('d-pages').textContent=PAGES.length;
@@ -827,14 +923,19 @@ function renderToks(){
   if(!c)return;
   if(TOKENS.length===0){c.innerHTML='<div style="font-size:12px;color:var(--t3);padding:6px 0">Chưa có token. Nhấn "Thêm token" để bắt đầu kết nối.</div>';return;}
   c.innerHTML=TOKENS.map(t=>`
-    <div class="token-row">
-      <input class="fi tok-name" value="${t.name||''}" placeholder="Tên page" onchange="updTok('${t.id}','name',this.value)">
-      <input class="fi tok-pid" value="${t.page_id||''}" placeholder="Page ID" onchange="updTok('${t.id}','page_id',this.value)">
-      <input class="fi tok-input" value="${t.token||''}" type="password" placeholder="EAABcDE..." onchange="updTok('${t.id}','token',this.value)">
-      <div class="tok-st ${t.status==='ok'?'tst-ok':t.status==='err'?'tst-err':'tst-p'}" title="${t.status==='ok'?'Kết nối OK':t.status==='err'?'Lỗi token':'Chờ test'}">
-        <i class="ti ti-${t.status==='ok'?'check':t.status==='err'?'x':'clock'}"></i>
+    <div class="token-row" style="margin-bottom:10px;background:var(--s2);padding:12px;border-radius:10px;border:1px solid ${t.status==='ok'?'rgba(34,197,94,0.3)':t.status==='err'?'rgba(239,68,68,0.3)':'var(--bdr2)'}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="tok-st ${t.status==='ok'?'tst-ok':t.status==='err'?'tst-err':'tst-p'}" style="width:28px;height:28px;flex-shrink:0">
+          <i class="ti ti-${t.status==='ok'?'circle-check':t.status==='err'?'circle-x':'clock'}"></i>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12.5px;font-weight:600;color:${t.status==='ok'?'var(--grn)':t.status==='err'?'var(--red)':'var(--t2)'}">${t.status==='ok'?'✓ '+t.name:t.status==='err'?'✗ Token lỗi — kiểm tra lại':'Chờ test...'}</div>
+          ${t.page_id?`<div style="font-size:10.5px;color:var(--t3)">Page ID: ${t.page_id}</div>`:''}
+        </div>
+        <button class="ha ha-d" onclick="cfDel('token','${t.id}','token này')"><i class="ti ti-trash"></i></button>
       </div>
-      <button class="ha ha-d" onclick="cfDel('token','${t.id}','token này')"><i class="ti ti-trash"></i></button>
+      <input class="fi" value="${t.token||''}" type="password" placeholder="Dán Page Access Token vào đây..." style="font-size:12px" onchange="updTok('${t.id}','token',this.value)" onblur="autoDetectPage('${t.id}',this.value)">
+      ${t.status==='err'?'<div style="font-size:11px;color:var(--red);margin-top:5px">⚠️ Token không hợp lệ hoặc thiếu quyền pages_read_engagement</div>':''}
     </div>`).join('');
 }
 
@@ -899,17 +1000,57 @@ window.fetchRev=async function(){
     toast('Cần Business Token có quyền pages_read_monetization để xem doanh thu thật!','err');
   }catch(e){toast('Lỗi kết nối API','err');}
 };
-window.addTok=async function(){await addDoc(tCol,{name:'',page_id:'',token:'',status:'pend'});};
+window.addTok=async function(){await addDoc(tCol,{name:'Đang nhận diện...',page_id:'',token:'',status:'pend'});};
+
+// Tự động nhận diện page từ token — không cần nhập tay
+window.autoDetectPage=async function(id,token){
+  if(!token||token.length<20)return;
+  const t=TOKENS.find(x=>x.id===id);
+  if(!t)return;
+  try{
+    // Lấy thông tin page từ token
+    const r=await fetch(`https://graph.facebook.com/v20.0/me/accounts?access_token=${token}`);
+    const d=await r.json();
+    if(d.error){
+      await setDoc(doc(db,'tokens',id),{...t,token,status:'err',name:'Token lỗi'});
+      toast('Token lỗi: '+d.error.message,'err');
+      return;
+    }
+    if(d.data&&d.data.length>0){
+      // Token User — lấy page đầu tiên
+      const page=d.data[0];
+      await setDoc(doc(db,'tokens',id),{...t,token:page.access_token,name:page.name,page_id:page.id,status:'ok'});
+      toast('✓ Nhận diện được: '+page.name+' ('+d.data.length+' page)');
+      // Nếu có nhiều page → thêm tự động
+      if(d.data.length>1){
+        for(let i=1;i<d.data.length;i++){
+          const p=d.data[i];
+          await addDoc(tCol,{name:p.name,page_id:p.id,token:p.access_token,status:'ok'});
+        }
+        toast('✓ Tự động thêm '+d.data.length+' page từ token!');
+      }
+    } else {
+      // Token Page trực tiếp
+      const r2=await fetch(`https://graph.facebook.com/v20.0/me?fields=name,id&access_token=${token}`);
+      const d2=await r2.json();
+      if(d2.error){await setDoc(doc(db,'tokens',id),{...t,token,status:'err',name:'Token lỗi'});return;}
+      await setDoc(doc(db,'tokens',id),{...t,token,name:d2.name||'Page',page_id:d2.id||'',status:'ok'});
+      toast('✓ Kết nối thành công: '+d2.name);
+    }
+  }catch(e){
+    await setDoc(doc(db,'tokens',id),{...t,token,status:'err',name:'Lỗi kết nối'});
+    toast('Lỗi kết nối Facebook API','err');
+  }
+};
 window.updTok=async function(id,f,v){const t=TOKENS.find(x=>x.id===id);if(t)await setDoc(doc(db,'tokens',id),{...t,[f]:v});};
 window.saveToks=function(){toast('Đã lưu tokens! Nhấn Sync để cập nhật dữ liệu.');};
 window.testToks=async function(){
-  toast('Đang test '+TOKENS.length+' token...');
+  toast('Đang test và nhận diện '+TOKENS.length+' token...');
   for(const t of TOKENS){
     if(!t.token)continue;
-    try{const r=await fetch(`https://graph.facebook.com/v20.0/me?access_token=${t.token}`);const d=await r.json();await setDoc(doc(db,'tokens',t.id),{...t,status:d.error?'err':'ok'});}
-    catch(e){await setDoc(doc(db,'tokens',t.id),{...t,status:'err'});}
+    await autoDetectPage(t.id,t.token);
   }
-  toast('Test xong!');
+  toast('Xong! Kiểm tra trạng thái từng token.');
 };
 window.saveBiz=function(){toast('Đã lưu Business token!');};
 
@@ -1029,6 +1170,21 @@ window.cfDel=function(type,id,name){
 const CH={};const GO={color:'rgba(255,255,255,0.04)'};const TO={color:'#55527A',font:{size:10.5,family:'Inter'}};
 function mkC(id,cfg){if(CH[id])CH[id].destroy();const el=document.getElementById(id);if(!el)return;CH[id]=new Chart(el,cfg);}
 window.initCharts=function(){
+  // Cập nhật tổng doanh thu từ data thật
+  const totalRev=PAGES.reduce((sum,p)=>sum+(p.rev_in_raw||0)+(p.rev_re_raw||0)+(p.rev_st_raw||0)+(p.rev_su_raw||0),0);
+  if(totalRev>0){
+    document.getElementById('d-rev').textContent='$'+totalRev.toFixed(2);
+    document.getElementById('rv-total').textContent='$'+totalRev.toFixed(2);
+    const inTotal=PAGES.reduce((s,p)=>s+(p.rev_in_raw||0),0);
+    const reTotal=PAGES.reduce((s,p)=>s+(p.rev_re_raw||0),0);
+    const stTotal=PAGES.reduce((s,p)=>s+(p.rev_st_raw||0),0);
+    const suTotal=PAGES.reduce((s,p)=>s+(p.rev_su_raw||0),0);
+    document.getElementById('rv-in').textContent='$'+inTotal.toFixed(2);
+    document.getElementById('rv-re').textContent='$'+reTotal.toFixed(2);
+    document.getElementById('rv-st').textContent='$'+stTotal.toFixed(2);
+    document.getElementById('rv-su').textContent='$'+suTotal.toFixed(2);
+    document.getElementById('rv-fc').textContent='$'+(totalRev*1.15).toFixed(2);
+  }
   const d7=['10/5','11/5','12/5','13/5','14/5','15/5','16/5'];
   mkC('c-main',{type:'line',data:{labels:d7,datasets:[{label:'Followers',data:[420,510,480,620,590,710,680],borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,0.07)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#2563EB',borderWidth:2},{label:'Reach',data:[200,210,215,230,225,248,260],borderColor:'#38BDF8',backgroundColor:'rgba(56,189,248,0.05)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#38BDF8',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:TO,grid:GO},y:{ticks:TO,grid:GO}}}});
   const g=PAGES.filter(p=>(p.score||50)>=70).length,w=PAGES.filter(p=>{const s=p.score||50;return s>=40&&s<70;}).length,b=PAGES.filter(p=>(p.score||50)<40).length;
@@ -1037,6 +1193,148 @@ window.initCharts=function(){
   if(leg)leg.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t2)"><span><span style="color:var(--grn)">●</span> Tốt (${g})</span><span><span style="color:var(--ora)">●</span> Cảnh báo (${w})</span><span><span style="color:var(--red)">●</span> Nguy hiểm (${b})</span></div>`;
   mkC('c-rev',{type:'bar',data:{labels:['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'],datasets:[{data:[0,0,0,0,0,0,0,0,0,0,0,0],backgroundColor:'#2563EB',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:TO,grid:{display:false}},y:{ticks:TO,grid:GO}}}});
 };
+
+// MANUAL INPUT FUNCTIONS
+function updManualPageSels(){
+  const sels=['manual-page-sel','rev-page-sel'];
+  sels.forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    const cur=sel.value;
+    sel.innerHTML='<option value="">— Chọn page cần nhập —</option>'+PAGES.map(p=>`<option value="${p.id}">${p.emoji||''} ${p.name}</option>`).join('');
+    if(cur)sel.value=cur;
+  });
+}
+
+window.loadManualPage=function(pid){
+  const form=document.getElementById('manual-page-form');
+  if(!pid){form.style.display='none';return;}
+  const p=PAGES.find(x=>x.id===pid);
+  if(!p)return;
+  document.getElementById('manual-page-id').value=pid;
+  document.getElementById('m-followers').value=parseNum(p.followers)||'';
+  document.getElementById('m-reach').value=parseNum(p.reach)||'';
+  document.getElementById('m-views').value=parseNum(p.views)||'';
+  document.getElementById('m-fol-change').value=p.fol_change||0;
+  document.getElementById('m-trend').value=p.trend||'';
+  document.getElementById('m-status').value=p.status||'active';
+  form.style.display='block';
+};
+
+window.saveManualStats=async function(){
+  const pid=document.getElementById('manual-page-id').value;
+  if(!pid){toast('Chọn page trước!','err');return;}
+  const p=PAGES.find(x=>x.id===pid);
+  if(!p)return;
+  const fol=parseInt(document.getElementById('m-followers').value)||0;
+  const reach=parseInt(document.getElementById('m-reach').value)||0;
+  const views=parseInt(document.getElementById('m-views').value)||0;
+  const folChange=parseInt(document.getElementById('m-fol-change').value)||0;
+  const trend=document.getElementById('m-trend').value||'+0%';
+  const status=document.getElementById('m-status').value;
+  // Tính score dựa trên trend và status
+  let score=status==='active'?75:status==='warn'?42:20;
+  if(folChange>0)score=Math.min(100,score+Math.min(15,folChange/1000));
+  if(folChange<0)score=Math.max(10,score+Math.max(-20,folChange/500));
+  const now=new Date().toLocaleString('vi-VN');
+  await setDoc(doc(db,'pages',pid),{
+    ...p,
+    followers:fmtNum(fol),
+    reach:fmtNum(reach),
+    views:fmtNum(views),
+    fol_change:folChange,
+    trend,status,
+    score:Math.round(score),
+    last_sync:'Nhập tay '+now,
+    manual_updated:now
+  });
+  toast('Đã lưu số liệu cho '+p.name+'!');
+  document.getElementById('manual-page-form').style.display='none';
+  document.getElementById('manual-page-sel').value='';
+  renderManualSummary();
+};
+
+window.loadRevPage=function(pid){
+  const form=document.getElementById('rev-page-form');
+  if(!pid){form.style.display='none';return;}
+  const p=PAGES.find(x=>x.id===pid);
+  if(!p)return;
+  document.getElementById('rev-page-id').value=pid;
+  document.getElementById('r-instream').value=p.rev_in_raw||'';
+  document.getElementById('r-reels').value=p.rev_re_raw||'';
+  document.getElementById('r-stars').value=p.rev_st_raw||'';
+  document.getElementById('r-subs').value=p.rev_su_raw||'';
+  updateRevPreview();
+  form.style.display='block';
+};
+
+window.updateRevPreview=function(){
+  const ins=parseFloat(document.getElementById('r-instream').value)||0;
+  const re=parseFloat(document.getElementById('r-reels').value)||0;
+  const st=parseFloat(document.getElementById('r-stars').value)||0;
+  const su=parseFloat(document.getElementById('r-subs').value)||0;
+  const total=ins+re+st+su;
+  document.getElementById('rev-total-preview').textContent='$'+total.toFixed(2);
+};
+
+// Gắn event listener cập nhật preview realtime
+['r-instream','r-reels','r-stars','r-subs'].forEach(id=>{
+  setTimeout(()=>{
+    const el=document.getElementById(id);
+    if(el)el.addEventListener('input',updateRevPreview);
+  },3000);
+});
+
+window.saveManualRev=async function(){
+  const pid=document.getElementById('rev-page-id').value;
+  if(!pid){toast('Chọn page trước!','err');return;}
+  const p=PAGES.find(x=>x.id===pid);
+  if(!p)return;
+  const ins=parseFloat(document.getElementById('r-instream').value)||0;
+  const re=parseFloat(document.getElementById('r-reels').value)||0;
+  const st=parseFloat(document.getElementById('r-stars').value)||0;
+  const su=parseFloat(document.getElementById('r-subs').value)||0;
+  const total=ins+re+st+su;
+  const month=document.getElementById('rev-month-sel').value;
+  const now=new Date().toLocaleString('vi-VN');
+  await setDoc(doc(db,'pages',pid),{
+    ...p,
+    rev_in:'$'+ins.toFixed(2),
+    rev_re:'$'+re.toFixed(2),
+    rev_st:'$'+st.toFixed(2),
+    rev_su:'$'+su.toFixed(2),
+    rev_total:'$'+total.toFixed(2),
+    rev_in_raw:ins,rev_re_raw:re,rev_st_raw:st,rev_su_raw:su,
+    rev_month:month,
+    rev_updated:now
+  });
+  // Cập nhật tổng doanh thu trên dashboard
+  const allRev=PAGES.reduce((sum,pg)=>sum+(pg.rev_in_raw||0)+(pg.rev_re_raw||0)+(pg.rev_st_raw||0)+(pg.rev_su_raw||0),0)+total;
+  document.getElementById('rv-total').textContent='$'+allRev.toFixed(2);
+  document.getElementById('d-rev').textContent='$'+allRev.toFixed(2);
+  toast('Đã lưu doanh thu $'+total.toFixed(2)+' cho '+p.name+'!');
+  document.getElementById('rev-page-form').style.display='none';
+  document.getElementById('rev-page-sel').value='';
+  renderManualSummary();
+};
+
+function renderManualSummary(){
+  const tb=document.getElementById('manual-summary-tbl');
+  if(!tb)return;
+  if(PAGES.length===0){tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--t3);padding:16px">Chưa có dữ liệu</td></tr>';return;}
+  tb.innerHTML=PAGES.map(p=>`
+    <tr>
+      <td><div class="pr"><div class="pt">${p.emoji||'📄'}</div><div><div class="pname">${p.name}</div><div class="pcat">${p.cat}</div></div></div></td>
+      <td style="font-weight:600;color:var(--brand3)">${p.followers||'—'}</td>
+      <td style="color:var(--sky)">${p.reach||'—'}</td>
+      <td>${p.views||'—'}</td>
+      <td>${p.fol_change>0?'<span class="tup">+'+p.fol_change.toLocaleString()+'</span>':p.fol_change<0?'<span class="tdn">'+p.fol_change.toLocaleString()+'</span>':'—'}</td>
+      <td style="color:var(--grn)">${p.rev_in||'$0.00'}</td>
+      <td style="color:var(--sky)">${p.rev_re||'$0.00'}</td>
+      <td style="font-weight:700;color:var(--grn)">${p.rev_total||'$0.00'}</td>
+      <td style="font-size:10.5px;color:var(--t3)">${p.manual_updated||p.rev_updated||'Chưa cập nhật'}</td>
+    </tr>`).join('');
+}
 
 // MODAL
 window.sm=function(id){document.getElementById(id).classList.add('show');};
