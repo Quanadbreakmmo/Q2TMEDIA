@@ -960,34 +960,109 @@ window.syncAll=async function(){
   const ico=document.getElementById('sync-ico');
   ico.style.animation='spin .6s linear infinite';
   toast('Đang đồng bộ dữ liệu từ Facebook API...');
-  let synced=0;
+  let synced=0,errors=0;
   const now=new Date().toLocaleTimeString('vi-VN');
+
   for(const t of TOKENS){
-    if(!t.token||!t.page_id)continue;
+    if(!t.token)continue;
     try{
-      const r=await fetch(`https://graph.facebook.com/v20.0/${t.page_id}?fields=name,fan_count,followers_count&access_token=${t.token}`);
+      // Dùng page_id nếu có, không thì dùng /me
+      const endpoint=t.page_id?t.page_id:'me';
+      const r=await fetch(`https://graph.facebook.com/v20.0/${endpoint}?fields=name,id,fan_count,followers_count&access_token=${t.token}`);
       const d=await r.json();
-      if(d.error){await setDoc(doc(db,'tokens',t.id),{...t,status:'err'});continue;}
-      const ri=await fetch(`https://graph.facebook.com/v20.0/${t.page_id}/insights?metric=page_impressions&period=day&access_token=${t.token}`);
-      const di=await ri.json();
-      const page=PAGES.find(p=>p.pid===t.page_id||p.name===t.name);
-      if(page){
-        const newFol=d.followers_count||d.fan_count||0;
-        const prevN=parseFloat((page.followers||'0').replace('K','').replace('M',''))*(page.followers?.includes('M')?1e6:page.followers?.includes('K')?1e3:1)||0;
-        const folChange=newFol-prevN;
-        let reach='—';
-        if(di.data?.[0]?.values?.length>0){const rv=di.data[0].values[di.data[0].values.length-1].value;reach=rv>1e6?(rv/1e6).toFixed(1)+'M':rv>1e3?Math.round(rv/1e3)+'K':rv.toString();}
-        const nF=newFol>1e6?(newFol/1e6).toFixed(2)+'M':newFol>1e3?Math.round(newFol/1e3)+'K':newFol.toString();
-        let score=70;if(folChange>0)score=Math.min(100,score+Math.min(20,folChange/500));if(folChange<0)score=Math.max(10,score+Math.max(-30,folChange/300));
-        await setDoc(doc(db,'pages',page.id),{...page,followers:nF,reach,fol_change:folChange,score:Math.round(score),last_sync:now,status:score<40?'error':score<70?'warn':'active'});
-        synced++;
+
+      if(d.error){
+        await setDoc(doc(db,'tokens',t.id),{...t,status:'err'});
+        errors++;
+        continue;
       }
-      await setDoc(doc(db,'tokens',t.id),{...t,status:'ok'});
-    }catch(e){await setDoc(doc(db,'tokens',t.id),{...t,status:'err'});}
+
+      // Cập nhật page_id và tên nếu chưa có
+      const pageId=d.id||t.page_id;
+      const pageName=d.name||t.name;
+      if(pageId&&(!t.page_id||!t.name||t.name==='Đang nhận diện...')){
+        await setDoc(doc(db,'tokens',t.id),{...t,page_id:pageId,name:pageName,status:'ok'});
+      }
+
+      // Lấy insights reach
+      let reach='—',reachNum=0;
+      try{
+        const ri=await fetch(`https://graph.facebook.com/v20.0/${pageId}/insights?metric=page_impressions_unique&period=day&access_token=${t.token}`);
+        const di=await ri.json();
+        if(di.data?.[0]?.values?.length>0){
+          reachNum=di.data[0].values[di.data[0].values.length-1].value||0;
+          reach=fmtNum(reachNum);
+        }
+      }catch(e){}
+
+      // Số followers mới
+      const newFol=d.followers_count||d.fan_count||0;
+
+      // Tìm page tương ứng trong Firebase
+      let page=PAGES.find(p=>p.pid===pageId||p.name===pageName);
+
+      if(page){
+        // Tính thay đổi followers
+        const prevFol=parseNum(page.followers)||0;
+        const folChange=newFol-prevFol;
+        const nF=fmtNum(newFol);
+        // Tính health score
+        let score=75;
+        if(folChange>500)score=Math.min(100,score+15);
+        else if(folChange>0)score=Math.min(100,score+5);
+        else if(folChange<-500)score=Math.max(10,score-20);
+        else if(folChange<0)score=Math.max(10,score-10);
+
+        await setDoc(doc(db,'pages',page.id),{
+          ...page,
+          pid:pageId,
+          followers:nF,
+          reach:reach,
+          fol_change:folChange,
+          score:Math.round(score),
+          last_sync:now,
+          status:score<40?'error':score<70?'warn':'active'
+        });
+        synced++;
+      } else {
+        // Page chưa có trong hệ thống → tự động thêm mới
+        await addDoc(pCol,{
+          name:pageName,
+          emoji:'📄',
+          cat:'Khác',
+          pid:pageId,
+          followers:fmtNum(newFol),
+          reach:reach,
+          views:'—',
+          trend:'+0%',
+          mgr:'—',
+          status:'active',
+          score:75,
+          fol_change:0,
+          last_sync:now
+        });
+        synced++;
+        toast('✓ Tự động thêm page mới: '+pageName);
+      }
+      await setDoc(doc(db,'tokens',t.id),{...t,page_id:pageId,name:pageName,status:'ok'});
+
+    }catch(e){
+      await setDoc(doc(db,'tokens',t.id),{...t,status:'err'});
+      errors++;
+    }
   }
-  document.getElementById('last-sync').textContent=now;
+
+  const lsEl=document.getElementById('last-sync');
+  if(lsEl)lsEl.textContent=now;
   ico.style.animation='';
-  toast(TOKENS.length===0?'Vào "Kết nối API" để thêm token Facebook!':'Sync xong! Đã cập nhật '+synced+'/'+TOKENS.length+' page.');
+
+  if(TOKENS.length===0){
+    toast('Vào "Kết nối API" để thêm token Facebook!');
+  } else if(errors>0&&synced===0){
+    toast('Tất cả token bị lỗi! Kiểm tra lại token trong Kết nối API.','err');
+  } else {
+    toast('Sync xong! Cập nhật '+synced+' page'+(errors>0?' ('+errors+' lỗi)':'')+'.');
+  }
 };
 
 window.fetchRev=async function(){
