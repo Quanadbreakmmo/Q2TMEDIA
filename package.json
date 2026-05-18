@@ -1,0 +1,12 @@
+{
+  "name": "q2t-media-sync",
+  "version": "1.0.0",
+  "description": "Q2T Media Facebook sync script",
+  "main": "sync.js",
+  "scripts": {
+    "sync": "node sync.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}
