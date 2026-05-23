@@ -346,9 +346,8 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
               <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:6px">Tổng Doanh Thu Tháng</div>
               <div style="font-size:44px;font-weight:700;color:var(--grn);letter-spacing:-1.5px;line-height:1" id="d-rev">$0.00</div>
               <div style="font-size:11px;color:var(--t3);margin-top:6px;display:flex;align-items:center;gap:6px">
-                <span class="sb-dot"></span>
-                Live · <span id="d-last-sync" style="color:var(--t1)">Chưa sync</span>
-                <button class="btn btn-grn" onclick="fetchRev()" style="padding:3px 10px;font-size:11px"><i class="ti ti-refresh"></i>Sync</button>
+                <span class="sb-dot"></span><span style="color:var(--grn)">Auto sync mỗi 5 phút</span>
+                <button class="btn btn-grn" onclick="fetchRev()" style="padding:3px 10px;font-size:11px;margin-left:4px"><i class="ti ti-refresh"></i>Sync ngay</button>
               </div>
             </div>
           </div>
@@ -414,6 +413,19 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
 
       <!-- TẤT CẢ TRANG -->
       <div class="panel" id="panel-allpages">
+        <!-- Status bar realtime -->
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border:1px solid var(--bdr2);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="sb-dot"></span>
+            <span style="color:var(--grn);font-weight:600">Realtime</span>
+            <span style="color:var(--t3)">· Dữ liệu từ Facebook API · Cập nhật mỗi 5 phút</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="color:var(--t3);font-size:11px">Sync cuối: <span id="ap-last-sync" style="color:var(--t1)">—</span></span>
+            <button class="btn btn-grn" onclick="syncAll()" style="padding:4px 10px;font-size:11px"><i class="ti ti-refresh"></i>Sync ngay</button>
+          </div>
+        </div>
+
         <!-- Stats tổng quan -->
         <div class="sg" style="grid-template-columns:repeat(4,1fr)">
           <div class="sc">
@@ -426,19 +438,19 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
             <div class="sc-icon n"><i class="ti ti-users"></i></div>
             <div class="sc-lbl">Tổng Followers</div>
             <div class="sc-val" id="ap-fol">—</div>
-            <div class="sc-sub"><span class="neu">Tổng tất cả page</span></div>
+            <div class="sc-sub" id="ap-fol-trend"><span class="neu">Từ Facebook API</span></div>
           </div>
           <div class="sc">
             <div class="sc-icon s"><i class="ti ti-eye"></i></div>
             <div class="sc-lbl">Reach Hôm Nay</div>
             <div class="sc-val" id="ap-reach">—</div>
-            <div class="sc-sub"><span class="neu">Cập nhật mỗi 5 phút</span></div>
+            <div class="sc-sub"><span class="sb-dot" style="width:5px;height:5px;flex-shrink:0"></span><span style="color:var(--grn)">5 phút/lần</span></div>
           </div>
           <div class="sc" style="border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.05)">
             <div class="sc-icon n"><i class="ti ti-radio"></i></div>
-            <div class="sc-lbl" style="color:var(--grn)">Real On — Reach Live</div>
+            <div class="sc-lbl" style="color:var(--grn)">Real On</div>
             <div class="sc-val" id="ap-real-on" style="color:var(--grn)">—</div>
-            <div class="sc-sub"><span class="sb-dot" style="width:5px;height:5px"></span><span style="color:var(--grn)">Online realtime</span></div>
+            <div class="sc-sub"><span class="sb-dot" style="width:5px;height:5px;animation:blink 1s infinite"></span><span style="color:var(--grn);font-weight:600">Live từ API</span></div>
           </div>
         </div>
 
@@ -790,7 +802,20 @@ async function seedOnce(){
 seedOnce();
 
 // AUTO SYNC
-function startSync(){if(syncTimer)clearInterval(syncTimer);syncTimer=setInterval(()=>syncAll(),5*60*1000);}
+function startSync(){
+  if(syncTimer)clearInterval(syncTimer);
+  syncTimer=setInterval(()=>syncAll(),5*60*1000);
+  // Lắng nghe thay đổi từ Firebase settings/sync
+  try{
+    onSnapshot(doc(db,'settings','sync'),snap=>{
+      if(snap.exists()){
+        const d=snap.data();
+        const als=document.getElementById('ap-last-sync');if(als&&d.last_sync)als.textContent=d.last_sync;
+        const dls=document.getElementById('d-last-sync');if(dls&&d.last_sync)dls.textContent=d.last_sync;
+      }
+    });
+  }catch(e){}
+}
 
 // LOGIN
 window.doLogin=async function(){
@@ -916,11 +941,17 @@ function renderTop(){
   const recentPages=PAGES.filter(p=>p.auto_synced&&p.reach&&p.reach!=='—');
   let realOn=0;recentPages.forEach(p=>{realOn+=parseNum(p.reach);});
   document.getElementById('ap-real-on').textContent=realOn>0?fmtNum(realOn):'—';
-  // Cập nhật dashboard sync time
-  const dls=document.getElementById('d-last-sync');
-  if(dls&&PAGES.length>0){
-    const latest=PAGES.filter(p=>p.last_sync).sort((a,b)=>b.last_sync>a.last_sync?1:-1)[0];
-    if(latest)dls.textContent=latest.last_sync;
+  // Cập nhật sync time
+  const latest=PAGES.filter(p=>p.last_sync).sort((a,b)=>b.last_sync>a.last_sync?1:-1)[0];
+  if(latest){
+    const dls=document.getElementById('d-last-sync');if(dls)dls.textContent=latest.last_sync;
+    const als=document.getElementById('ap-last-sync');if(als)als.textContent=latest.last_sync;
+  }
+  // Cập nhật followers trend
+  const folTrend=document.getElementById('ap-fol-trend');
+  if(folTrend){
+    const totalChange=PAGES.reduce((s,p)=>s+(p.fol_change||0),0);
+    folTrend.innerHTML=totalChange>0?`<span class="up">▲ +${totalChange.toLocaleString('vi-VN')} hôm nay</span>`:totalChange<0?`<span class="dn">▼ ${totalChange.toLocaleString('vi-VN')} hôm nay</span>`:'<span class="neu">Từ Facebook API</span>';
   }
   // Update dashboard revenue
   updateRevDisplay();
