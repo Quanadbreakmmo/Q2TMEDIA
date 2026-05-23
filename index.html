@@ -449,18 +449,15 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
       <div class="panel" id="panel-api">
         <div class="api-sec">
           <div class="api-sec-t"><i class="ti ti-plug"></i>Page Access Token — Theo dõi từng Page</div>
-          <p style="font-size:12px;color:var(--t2);margin-bottom:12px;line-height:1.7">
-  <strong style="color:var(--brand3)">Chỉ cần dán token vào — app tự nhận diện page!</strong><br>
-  Lấy token tại <span style="color:var(--brand3)">developers.facebook.com/tools/explorer</span><br>
-  Quyền cần tích: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;font-size:11px">pages_show_list · pages_read_engagement · read_insights</code><br>
-  <span style="color:var(--grn)">✓ Nếu dùng User Token → app tự lấy tất cả page bạn đang quản lý!</span>
-</p>
+          <div style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.2);border-radius:9px;padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.8;color:var(--t2)">
+  <strong style="color:var(--grn)">✓ Cách hoạt động:</strong> Token bạn nhập → lưu vào Firebase → GitHub Actions đọc → gọi Facebook API → cập nhật dữ liệu tự động mỗi 5 phút!<br>
+  <strong style="color:var(--brand3)">Lấy token tại:</strong> developers.facebook.com/tools/explorer → đăng nhập tài khoản Admin page → tích quyền <code style="background:var(--s3);padding:1px 5px;border-radius:4px">pages_read_engagement</code> + <code style="background:var(--s3);padding:1px 5px;border-radius:4px">read_insights</code> → Generate Access Token → copy<br>
+  <strong style="color:var(--gold)">⚡ Mỗi tài khoản chỉ cần nhập 1 lần — tự động lấy tất cả page của tài khoản đó!</strong>
+</div>
           <div id="token-list"></div>
           <div style="display:flex;gap:7px;margin-top:10px">
-            <button class="btn btn-sky" onclick="addTok()"><i class="ti ti-plus"></i>Thêm token</button>
-            <button class="btn btn-b" onclick="saveToks()"><i class="ti ti-device-floppy"></i>Lưu tokens</button>
-            <button class="btn btn-grn" onclick="testToks()"><i class="ti ti-plug"></i>Test tất cả</button>
-            <button class="btn btn-b" onclick="syncAll()"><i class="ti ti-refresh"></i>Sync ngay</button>
+            <button class="btn btn-b" onclick="addTok()"><i class="ti ti-plus"></i>Thêm tài khoản</button>
+            <button class="btn btn-grn" onclick="saveToks()"><i class="ti ti-device-floppy"></i>Lưu tất cả</button>
           </div>
         </div>
         <div class="api-sec">
@@ -923,19 +920,29 @@ function renderToks(){
   if(!c)return;
   if(TOKENS.length===0){c.innerHTML='<div style="font-size:12px;color:var(--t3);padding:6px 0">Chưa có token. Nhấn "Thêm token" để bắt đầu kết nối.</div>';return;}
   c.innerHTML=TOKENS.map(t=>`
-    <div class="token-row" style="margin-bottom:10px;background:var(--s2);padding:12px;border-radius:10px;border:1px solid ${t.status==='ok'?'rgba(34,197,94,0.3)':t.status==='err'?'rgba(239,68,68,0.3)':'var(--bdr2)'}">
+    <div style="margin-bottom:10px;background:var(--s2);padding:12px;border-radius:10px;border:1px solid ${t.token?'rgba(34,197,94,0.25)':'var(--bdr2)'}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <div class="tok-st ${t.status==='ok'?'tst-ok':t.status==='err'?'tst-err':'tst-p'}" style="width:28px;height:28px;flex-shrink:0">
-          <i class="ti ti-${t.status==='ok'?'circle-check':t.status==='err'?'circle-x':'clock'}"></i>
+        <div style="width:28px;height:28px;border-radius:7px;background:${t.token?'rgba(34,197,94,0.15)':'rgba(56,189,248,0.12)'};color:${t.token?'var(--grn)':'var(--sky)'};display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">
+          <i class="ti ti-${t.token?'circle-check':'clock'}"></i>
         </div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:12.5px;font-weight:600;color:${t.status==='ok'?'var(--grn)':t.status==='err'?'var(--red)':'var(--t2)'}">${t.status==='ok'?'✓ '+t.name:t.status==='err'?'✗ Token lỗi — kiểm tra lại':'Chờ test...'}</div>
-          ${t.page_id?`<div style="font-size:10.5px;color:var(--t3)">Page ID: ${t.page_id}</div>`:''}
+          <div style="font-size:12.5px;font-weight:600;color:${t.token?'var(--grn)':'var(--t2)'}">${t.name||'Tài khoản mới'}</div>
+          <div style="font-size:10.5px;color:var(--t3)">${t.token?'✓ Token đã lưu — GitHub Actions sẽ sync tự động':'Chưa có token — dán vào ô bên dưới'}</div>
         </div>
         <button class="ha ha-d" onclick="cfDel('token','${t.id}','token này')"><i class="ti ti-trash"></i></button>
       </div>
-      <input class="fi" value="${t.token||''}" type="password" placeholder="Dán Page Access Token vào đây..." style="font-size:12px" onchange="updTok('${t.id}','token',this.value)" onblur="autoDetectPage('${t.id}',this.value)">
-      ${t.status==='err'?'<div style="font-size:11px;color:var(--red);margin-top:5px">⚠️ Token lỗi — thử lấy token mới tại Graph Explorer</div>':''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Tên tài khoản/ghi chú</div>
+          <input class="fi" value="${t.name||''}" placeholder="VD: Tài khoản Minh Tuấn" style="font-size:12px" onchange="updTok('${t.id}','name',this.value)">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Page ID (nếu có)</div>
+          <input class="fi" value="${t.page_id||''}" placeholder="Để trống = lấy tất cả page" style="font-size:12px" onchange="updTok('${t.id}','page_id',this.value)">
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">Access Token</div>
+      <input class="fi" value="${t.token||''}" type="password" placeholder="Dán token từ Graph Explorer vào đây..." style="font-size:12px" onchange="updTok('${t.id}','token',this.value)">
     </div>`).join('');
 }
 
