@@ -301,7 +301,7 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
       <div class="sb-item on" onclick="go('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
       <div class="sb-item" onclick="go('allpages',this)"><i class="ti ti-brand-facebook"></i>Tất Cả Trang<span class="sb-badge" id="b-pages">0</span></div>
 
-      <div class="sb-item" onclick="go('revenue',this)"><i class="ti ti-currency-dollar"></i>Doanh thu FB</div>
+
       <div class="sb-sec">Quản lý</div>
       <div class="sb-item" onclick="go('staff',this)"><i class="ti ti-users"></i>Nhân sự<span class="sb-badge" id="b-staff">0</span></div>
       <div class="sb-item" onclick="go('notes',this)"><i class="ti ti-notes"></i>Ghi chú<span class="sb-badge" id="b-notes">0</span></div>
@@ -383,13 +383,32 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
           </div>
         </div>
 
-        <!-- TOP PAGE DOANH THU -->
-        <div class="sec-hdr">
-          <div class="sec-title"><i class="ti ti-currency-dollar"></i>Doanh thu từng Page</div>
-          <button class="btn btn-out" onclick="go('revenue',document.querySelector('[onclick*=revenue]'))">Xem chi tiết</button>
+        <!-- DOANH THU CHI TIẾT -->
+        <div class="sec-hdr" style="margin-top:4px">
+          <div class="sec-title"><i class="ti ti-currency-dollar"></i><span id="lbl-rev-detail">Doanh thu từng Page</span></div>
         </div>
+
+        <!-- 2 mục chính -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:12px;padding:16px">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
+              <div style="width:30px;height:30px;background:rgba(37,99,235,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="ti ti-device-tv" style="color:var(--brand3);font-size:14px"></i></div>
+              <div style="font-size:10px;color:var(--brand3);text-transform:uppercase;letter-spacing:1.5px;font-weight:700" id="lbl-content-mon">Content Monetization</div>
+            </div>
+            <div style="font-size:30px;font-weight:700;color:var(--brand3);letter-spacing:-1px" id="rv-content-total">$0.00</div>
+          </div>
+          <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:12px;padding:16px">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
+              <div style="width:30px;height:30px;background:rgba(249,115,22,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="ti ti-gift" style="color:var(--ora);font-size:14px"></i></div>
+              <div style="font-size:10px;color:var(--ora);text-transform:uppercase;letter-spacing:1.5px;font-weight:700" id="lbl-bonus">Bonus</div>
+            </div>
+            <div style="font-size:30px;font-weight:700;color:var(--ora);letter-spacing:-1px" id="rv-bonus-total">$0.00</div>
+          </div>
+        </div>
+
+        <!-- BẢNG DOANH THU TỪNG PAGE -->
         <div class="card" style="padding:0;overflow:hidden">
-          <table><thead><tr><th>Page</th><th>Content Monetization</th><th>Bonus</th><th>Tổng</th><th>Cập nhật</th></tr></thead><tbody id="tbl-top"></tbody></table>
+          <table><thead><tr><th id="th-page">Page</th><th id="th-content">Content Monetization</th><th id="th-bonus">Bonus</th><th id="th-total">Tổng</th><th id="th-updated">Cập nhật</th></tr></thead><tbody id="tbl-top"></tbody></table>
         </div>
       </div>
 
@@ -461,68 +480,6 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
           </div>
         </div>
         <div class="health-grid" id="health-grid"></div>
-      </div>
-
-      <!-- REVENUE -->
-      <div class="panel" id="panel-revenue">
-
-        <!-- TỔNG DOANH THU -->
-        <div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(34,197,94,0.08));border-color:rgba(34,197,94,0.3)">
-          <div style="text-align:center;padding:8px 0 16px">
-            <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:8px">Tổng Doanh Thu Tháng</div>
-            <div style="font-size:48px;font-weight:700;color:var(--grn);letter-spacing:-1.5px;line-height:1" id="rv-grand-total">$0.00</div>
-            <div style="font-size:12px;color:var(--t3);margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px">
-              <span class="sb-dot" style="width:6px;height:6px"></span>
-              Cập nhật tự động · <span id="rv-last-update" style="color:var(--t1)">Chưa sync</span>
-              <button class="btn btn-grn" onclick="fetchRev()" style="padding:4px 10px;font-size:11px;margin-left:6px"><i class="ti ti-refresh"></i>Sync</button>
-            </div>
-          </div>
-
-          <!-- 2 mục chính -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
-
-            <!-- CONTENT MONETIZATION -->
-            <div style="background:rgba(37,99,235,0.12);border:1px solid rgba(37,99,235,0.25);border-radius:12px;padding:18px">
-              <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px">
-                <div style="width:32px;height:32px;background:rgba(37,99,235,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="ti ti-device-tv" style="color:var(--brand3);font-size:15px"></i></div>
-                <div>
-                  <div style="font-size:10px;color:var(--brand3);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Content Monetization</div>
-                  <div style="font-size:10px;color:var(--t3)">In-stream · Reels · Stars · Subs</div>
-                </div>
-              </div>
-              <div style="font-size:32px;font-weight:700;color:var(--brand3);letter-spacing:-1px" id="rv-content-total">$0.00</div>
-              <div style="font-size:11px;color:var(--t3);margin-top:6px" id="rv-content-sub">Nhập tay hoặc kết nối API</div>
-            </div>
-
-            <!-- BONUS -->
-            <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.25);border-radius:12px;padding:18px">
-              <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px">
-                <div style="width:32px;height:32px;background:rgba(249,115,22,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="ti ti-gift" style="color:var(--ora);font-size:15px"></i></div>
-                <div>
-                  <div style="font-size:10px;color:var(--ora);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Bonus</div>
-                  <div style="font-size:10px;color:var(--t3)">Performance · Creator · Milestone</div>
-                </div>
-              </div>
-              <div style="font-size:32px;font-weight:700;color:var(--ora);letter-spacing:-1px" id="rv-bonus-total">$0.00</div>
-              <div style="font-size:11px;color:var(--t3);margin-top:6px" id="rv-bonus-sub">Nhập tay hoặc kết nối API</div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- BẢNG TỪNG PAGE -->
-        <div class="card">
-          <div class="card-hdr">
-            <div class="card-title">Doanh thu từng Page</div>
-            <div style="font-size:11px;color:var(--t3)">Content Monetization + Bonus · Cập nhật từ API</div>
-          </div>
-          <table>
-            <thead>
-              <tr><th>Page</th><th>Content Monetization</th><th>Bonus</th><th>Tổng</th><th>Cập nhật lúc</th></tr>
-            </thead>
-            <tbody id="rev-tbl"></tbody>
-          </table>
-        </div>
       </div>
 
       <!-- STAFF -->
@@ -857,7 +814,7 @@ document.getElementById('li-p').addEventListener('keydown',e=>{if(e.key==='Enter
 document.getElementById('li-u').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('li-p').focus();});
 
 // NAV
-const TITLES={dashboard:'Dashboard — Doanh Thu',allpages:'Tất Cả Trang',health:'Sức khỏe từng Page',revenue:'Doanh thu Facebook',staff:'Quản lý Nhân sự',notes:'Ghi chú',manual:'Nhập liệu thủ công',api:'Kết nối API Facebook',accounts:'Quản lý Tài khoản'};
+const TITLES={dashboard:'Dashboard',allpages:'Tất Cả Trang',health:'Sức khỏe Page',staff:'Quản lý Nhân sự',notes:'Ghi chú',manual:'Nhập liệu thủ công',api:'Kết nối API Facebook',accounts:'Quản lý Tài khoản'};
 window.go=function(p,el){
   document.querySelectorAll('.panel').forEach(d=>d.classList.remove('on'));
   document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('on'));
@@ -1685,6 +1642,53 @@ window.toast=function(msg,type){
   ico.style.color=type==='err'?'var(--red)':'var(--grn)';
   ico.className='ti ti-'+(type==='err'?'alert-circle':'circle-check');
   clearTimeout(tT);tT=setTimeout(()=>el.classList.remove('show'),3500);
+};
+
+// ── ĐỒNG HỒ VIỆT NAM ──
+function startClock(){
+  function tick(){
+    const now=new Date();
+    const vn=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Ho_Chi_Minh'}));
+    const h=String(vn.getHours()).padStart(2,'0');
+    const m=String(vn.getMinutes()).padStart(2,'0');
+    const s=String(vn.getSeconds()).padStart(2,'0');
+    const d=vn.getDate(),mo=vn.getMonth()+1,y=vn.getFullYear();
+    const el=document.getElementById('clock-txt');
+    if(el)el.textContent=`${h}:${m}:${s} — ${d}/${mo}/${y}`;
+  }
+  tick();setInterval(tick,1000);
+}
+startClock();
+
+// ── NGÔN NGỮ ──
+const LANG={
+  vi:{
+    dashboard:'Dashboard',allpages:'Tất Cả Trang',staff:'Nhân Sự',notes:'Ghi Chú',manual:'Nhập Liệu',api:'Kết Nối API',accounts:'Tài Khoản',
+    'lbl-rev-detail':'Doanh thu từng Page','lbl-content-mon':'Content Monetization','lbl-bonus':'Bonus',
+    'th-page':'Page','th-content':'Content Monetization','th-bonus':'Bonus','th-total':'Tổng','th-updated':'Cập nhật',
+    'ptab-day':'Ngày','ptab-week':'Tuần','ptab-month':'Tháng'
+  },
+  en:{
+    dashboard:'Dashboard',allpages:'All Pages',staff:'Staff',notes:'Notes',manual:'Manual Input',api:'API Settings',accounts:'Accounts',
+    'lbl-rev-detail':'Revenue by Page','lbl-content-mon':'Content Monetization','lbl-bonus':'Bonus',
+    'th-page':'Page','th-content':'Content Monetization','th-bonus':'Bonus','th-total':'Total','th-updated':'Updated',
+    'ptab-day':'Day','ptab-week':'Week','ptab-month':'Month'
+  }
+};
+let currentLang='vi';
+window.setLang=function(lang){
+  currentLang=lang;
+  const L=LANG[lang];
+  // Cập nhật topbar tabs
+  ['ptab-day','ptab-week','ptab-month'].forEach(id=>{const el=document.getElementById(id);if(el&&L[id])el.textContent=L[id];});
+  // Cập nhật labels
+  ['lbl-rev-detail','lbl-content-mon','lbl-bonus','th-page','th-content','th-bonus','th-total','th-updated'].forEach(id=>{const el=document.getElementById(id);if(el&&L[id])el.textContent=L[id];});
+  // Active button
+  document.getElementById('lang-vi').style.background=lang==='vi'?'var(--brand2)':'transparent';
+  document.getElementById('lang-vi').style.color=lang==='vi'?'#fff':'var(--t2)';
+  document.getElementById('lang-en').style.background=lang==='en'?'var(--brand2)':'transparent';
+  document.getElementById('lang-en').style.color=lang==='en'?'#fff':'var(--t2)';
+  toast(lang==='vi'?'Đã chuyển sang Tiếng Việt':'Switched to English');
 };
 
 // INIT
