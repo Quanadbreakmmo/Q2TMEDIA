@@ -298,8 +298,9 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
     <div class="sb-db"><span class="sb-dot"></span><span id="db-st">Đang kết nối...</span></div>
     <nav class="sb-nav">
       <div class="sb-sec">Theo dõi</div>
-      <div class="sb-item on" onclick="go('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard<span class="sb-badge red" id="b-alerts" style="display:none">0</span></div>
-      <div class="sb-item" onclick="go('health',this)"><i class="ti ti-heart-rate-monitor"></i>Sức khỏe Page<span class="sb-badge" id="b-pages">0</span></div>
+      <div class="sb-item on" onclick="go('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
+      <div class="sb-item" onclick="go('allpages',this)"><i class="ti ti-brand-facebook"></i>Tất Cả Trang<span class="sb-badge" id="b-pages">0</span></div>
+      <div class="sb-item" onclick="go('health',this)"><i class="ti ti-heart-rate-monitor"></i>Sức khỏe Page<span class="sb-badge red" id="b-alerts" style="display:none">0</span></div>
       <div class="sb-item" onclick="go('revenue',this)"><i class="ti ti-currency-dollar"></i>Doanh thu FB</div>
       <div class="sb-sec">Quản lý</div>
       <div class="sb-item" onclick="go('staff',this)"><i class="ti ti-users"></i>Nhân sự<span class="sb-badge" id="b-staff">0</span></div>
@@ -334,40 +335,44 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
     </div>
     <div class="content">
 
-      <!-- DASHBOARD -->
+      <!-- DASHBOARD - TẬP TRUNG DOANH THU -->
       <div class="panel on" id="panel-dashboard">
         <div id="alert-bar" style="margin-bottom:14px"></div>
-        <div class="sg">
-          <div class="sc" onclick="go('health',document.querySelector('[onclick*=health]'))">
-            <div class="sc-icon b"><i class="ti ti-brand-facebook"></i></div>
-            <div class="sc-lbl">Tổng Fanpage</div>
-            <div class="sc-val" id="d-pages">0</div>
-            <div class="sc-sub"><span class="up" id="d-active">0</span>&nbsp;hoạt động</div>
+
+        <!-- DOANH THU REALTIME -->
+        <div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(34,197,94,0.08));border-color:rgba(34,197,94,0.3)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div>
+              <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:6px">Tổng Doanh Thu Tháng</div>
+              <div style="font-size:44px;font-weight:700;color:var(--grn);letter-spacing:-1.5px;line-height:1" id="d-rev">$0.00</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:6px;display:flex;align-items:center;gap:6px">
+                <span class="sb-dot"></span>
+                Live · <span id="d-last-sync" style="color:var(--t1)">Chưa sync</span>
+                <button class="btn btn-grn" onclick="fetchRev()" style="padding:3px 10px;font-size:11px"><i class="ti ti-refresh"></i>Sync</button>
+              </div>
+            </div>
           </div>
-          <div class="sc">
-            <div class="sc-icon n"><i class="ti ti-users"></i></div>
-            <div class="sc-lbl">Tổng Followers</div>
-            <div class="sc-val" id="d-fol">—</div>
-            <div class="sc-sub" id="d-fol-t"><span class="neu">Chờ API</span></div>
-          </div>
-          <div class="sc">
-            <div class="sc-icon s"><i class="ti ti-eye"></i></div>
-            <div class="sc-lbl">Tổng Reach hôm nay</div>
-            <div class="sc-val" id="d-reach">—</div>
-            <div class="sc-sub" id="d-reach-t"><span class="neu">Chờ API</span></div>
-          </div>
-          <div class="sc" onclick="go('revenue',document.querySelector('[onclick*=revenue]'))">
-            <div class="sc-icon r"><i class="ti ti-currency-dollar"></i></div>
-            <div class="sc-lbl">Doanh thu tháng</div>
-            <div class="sc-val" id="d-rev" style="color:var(--grn)">$0.00</div>
-            <div class="sc-sub"><span class="neu">Kết nối Business API</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:14px">
+              <div style="font-size:10px;color:var(--brand3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:5px"><i class="ti ti-device-tv"></i>Content Monetization</div>
+              <div style="font-size:26px;font-weight:700;color:var(--brand3)" id="d-content-rev">$0.00</div>
+            </div>
+            <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:10px;padding:14px">
+              <div style="font-size:10px;color:var(--ora);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:5px"><i class="ti ti-gift"></i>Bonus</div>
+              <div style="font-size:26px;font-weight:700;color:var(--ora)" id="d-bonus-rev">$0.00</div>
+            </div>
           </div>
         </div>
-        <div class="charts-row">
+
+        <!-- BIỂU ĐỒ DOANH THU -->
+        <div class="charts-row" style="margin-bottom:14px">
           <div class="card">
             <div class="card-hdr">
-              <div><div class="card-title">Xu hướng Followers & Reach</div><div class="card-sub" id="chart-lbl">7 ngày gần nhất</div></div>
-              <div style="display:flex;gap:10px;font-size:11px;color:var(--t2)"><span><span style="color:var(--brand3)">●</span> Followers</span><span><span style="color:var(--sky)">●</span> Reach</span></div>
+              <div><div class="card-title">Doanh thu theo ngày</div><div class="card-sub">Content Monetization + Bonus</div></div>
+              <div style="display:flex;gap:10px;font-size:11px;color:var(--t2)">
+                <span><span style="color:var(--brand3)">●</span> Content</span>
+                <span><span style="color:var(--ora)">●</span> Bonus</span>
+              </div>
             </div>
             <div style="height:160px;position:relative"><canvas id="c-main"></canvas></div>
           </div>
@@ -377,15 +382,71 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
             <div id="donut-leg" style="margin-top:8px"></div>
           </div>
         </div>
+
+        <!-- TOP PAGE DOANH THU -->
         <div class="sec-hdr">
-          <div class="sec-title"><i class="ti ti-flame"></i>Top Page hiệu quả nhất</div>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-out" onclick="go('health',document.querySelector('[onclick*=health]'))">Xem tất cả</button>
-            <button class="btn btn-b" onclick="openAddPage()"><i class="ti ti-plus"></i>Thêm Page</button>
+          <div class="sec-title"><i class="ti ti-currency-dollar"></i>Doanh thu từng Page</div>
+          <button class="btn btn-out" onclick="go('revenue',document.querySelector('[onclick*=revenue]'))">Xem chi tiết</button>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table><thead><tr><th>Page</th><th>Content Monetization</th><th>Bonus</th><th>Tổng</th><th>Cập nhật</th></tr></thead><tbody id="tbl-top"></tbody></table>
+        </div>
+      </div>
+
+      <!-- TẤT CẢ TRANG -->
+      <div class="panel" id="panel-allpages">
+        <!-- Stats tổng quan -->
+        <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+          <div class="sc">
+            <div class="sc-icon b"><i class="ti ti-brand-facebook"></i></div>
+            <div class="sc-lbl">Tổng Fanpage</div>
+            <div class="sc-val" id="ap-pages">0</div>
+            <div class="sc-sub"><span class="up" id="ap-active">0</span> hoạt động</div>
+          </div>
+          <div class="sc">
+            <div class="sc-icon n"><i class="ti ti-users"></i></div>
+            <div class="sc-lbl">Tổng Followers</div>
+            <div class="sc-val" id="ap-fol">—</div>
+            <div class="sc-sub"><span class="neu">Tổng tất cả page</span></div>
+          </div>
+          <div class="sc">
+            <div class="sc-icon s"><i class="ti ti-eye"></i></div>
+            <div class="sc-lbl">Reach Hôm Nay</div>
+            <div class="sc-val" id="ap-reach">—</div>
+            <div class="sc-sub"><span class="neu">Cập nhật mỗi 5 phút</span></div>
+          </div>
+          <div class="sc" style="border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.05)">
+            <div class="sc-icon n"><i class="ti ti-radio"></i></div>
+            <div class="sc-lbl" style="color:var(--grn)">Real On — Reach Live</div>
+            <div class="sc-val" id="ap-real-on" style="color:var(--grn)">—</div>
+            <div class="sc-sub"><span class="sb-dot" style="width:5px;height:5px"></span><span style="color:var(--grn)">Online realtime</span></div>
+          </div>
+        </div>
+
+        <!-- Bảng tất cả page -->
+        <div class="sec-hdr">
+          <div class="sec-title"><i class="ti ti-brand-facebook"></i>Tất Cả Trang (<span id="ap-count">0</span>)</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input class="fi" placeholder="🔍 Tìm trang..." style="width:170px;padding:7px 11px;font-size:12px" oninput="searchAP(this.value)">
+            <button class="btn btn-b" onclick="openAddPage()"><i class="ti ti-plus"></i>Thêm trang</button>
           </div>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
-          <table><thead><tr><th>Page</th><th>Followers</th><th>Reach</th><th>Tăng trưởng</th><th>Score</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="tbl-top"></tbody></table>
+          <table>
+            <thead>
+              <tr>
+                <th>Tên trang</th>
+                <th>Followers</th>
+                <th>Reach hôm nay</th>
+                <th>Real On</th>
+                <th>Tăng trưởng</th>
+                <th>Nhân sự</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="ap-tbl"></tbody>
+          </table>
         </div>
       </div>
 
@@ -404,19 +465,64 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
 
       <!-- REVENUE -->
       <div class="panel" id="panel-revenue">
-        <div class="rev-grid">
-          <div class="rev-card"><div class="rev-lbl">Tổng doanh thu tháng</div><div class="rev-val" id="rv-total" style="color:var(--grn)">$0.00</div><div class="rev-sub">Kết nối Business API để xem</div></div>
-          <div class="rev-card"><div class="rev-lbl">In-stream Ads</div><div class="rev-val" id="rv-in">$0.00</div><div class="rev-sub">Video content</div></div>
-          <div class="rev-card"><div class="rev-lbl">Reels Ads</div><div class="rev-val" id="rv-re">$0.00</div><div class="rev-sub">Short video</div></div>
-          <div class="rev-card"><div class="rev-lbl">Stars</div><div class="rev-val" id="rv-st">$0.00</div><div class="rev-sub">Live & posts</div></div>
-          <div class="rev-card"><div class="rev-lbl">Subscriptions</div><div class="rev-val" id="rv-su">$0.00</div><div class="rev-sub">Fan subscription</div></div>
-          <div class="rev-card"><div class="rev-lbl">Dự báo tháng tới</div><div class="rev-val" id="rv-fc" style="color:var(--sky)">$0.00</div><div class="rev-sub">Dựa trên xu hướng</div></div>
+
+        <!-- TỔNG DOANH THU -->
+        <div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(34,197,94,0.08));border-color:rgba(34,197,94,0.3)">
+          <div style="text-align:center;padding:8px 0 16px">
+            <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:8px">Tổng Doanh Thu Tháng</div>
+            <div style="font-size:48px;font-weight:700;color:var(--grn);letter-spacing:-1.5px;line-height:1" id="rv-grand-total">$0.00</div>
+            <div style="font-size:12px;color:var(--t3);margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px">
+              <span class="sb-dot" style="width:6px;height:6px"></span>
+              Cập nhật tự động · <span id="rv-last-update" style="color:var(--t1)">Chưa sync</span>
+              <button class="btn btn-grn" onclick="fetchRev()" style="padding:4px 10px;font-size:11px;margin-left:6px"><i class="ti ti-refresh"></i>Sync</button>
+            </div>
+          </div>
+
+          <!-- 2 mục chính -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
+
+            <!-- CONTENT MONETIZATION -->
+            <div style="background:rgba(37,99,235,0.12);border:1px solid rgba(37,99,235,0.25);border-radius:12px;padding:18px">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px">
+                <div style="width:32px;height:32px;background:rgba(37,99,235,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="ti ti-device-tv" style="color:var(--brand3);font-size:15px"></i></div>
+                <div>
+                  <div style="font-size:10px;color:var(--brand3);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Content Monetization</div>
+                  <div style="font-size:10px;color:var(--t3)">In-stream · Reels · Stars · Subs</div>
+                </div>
+              </div>
+              <div style="font-size:32px;font-weight:700;color:var(--brand3);letter-spacing:-1px" id="rv-content-total">$0.00</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:6px" id="rv-content-sub">Nhập tay hoặc kết nối API</div>
+            </div>
+
+            <!-- BONUS -->
+            <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.25);border-radius:12px;padding:18px">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px">
+                <div style="width:32px;height:32px;background:rgba(249,115,22,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="ti ti-gift" style="color:var(--ora);font-size:15px"></i></div>
+                <div>
+                  <div style="font-size:10px;color:var(--ora);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Bonus</div>
+                  <div style="font-size:10px;color:var(--t3)">Performance · Creator · Milestone</div>
+                </div>
+              </div>
+              <div style="font-size:32px;font-weight:700;color:var(--ora);letter-spacing:-1px" id="rv-bonus-total">$0.00</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:6px" id="rv-bonus-sub">Nhập tay hoặc kết nối API</div>
+            </div>
+
+          </div>
         </div>
-        <div class="card" style="margin-bottom:14px">
-          <div class="card-hdr"><div><div class="card-title">Doanh thu theo ngày</div><div class="card-sub">Tổng hợp tất cả page</div></div><button class="btn btn-sky" onclick="fetchRev()"><i class="ti ti-refresh"></i>Tải từ API</button></div>
-          <div style="height:220px;position:relative"><canvas id="c-rev"></canvas></div>
+
+        <!-- BẢNG TỪNG PAGE -->
+        <div class="card">
+          <div class="card-hdr">
+            <div class="card-title">Doanh thu từng Page</div>
+            <div style="font-size:11px;color:var(--t3)">Content Monetization + Bonus · Cập nhật từ API</div>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Page</th><th>Content Monetization</th><th>Bonus</th><th>Tổng</th><th>Cập nhật lúc</th></tr>
+            </thead>
+            <tbody id="rev-tbl"></tbody>
+          </table>
         </div>
-        <div class="card"><div class="card-hdr"><div class="card-title">Doanh thu từng Page</div></div><table><thead><tr><th>Page</th><th>In-stream</th><th>Reels</th><th>Stars</th><th>Tổng</th><th>So hôm qua</th></tr></thead><tbody id="rev-tbl"></tbody></table></div>
       </div>
 
       <!-- STAFF -->
@@ -547,16 +653,28 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
           <div id="rev-page-form" style="display:none">
             <input type="hidden" id="rev-page-id">
             <div style="background:var(--s2);border-radius:10px;padding:14px;margin-bottom:12px">
-              <div style="font-size:12px;font-weight:600;color:var(--grn);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-currency-dollar"></i>Doanh thu tháng này ($)</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                <div class="fg"><label class="fl">In-stream Ads ($)</label><input class="fi" id="r-instream" type="number" step="0.01" placeholder="0.00"></div>
-                <div class="fg"><label class="fl">Reels Ads ($)</label><input class="fi" id="r-reels" type="number" step="0.01" placeholder="0.00"></div>
-                <div class="fg"><label class="fl">Stars ($)</label><input class="fi" id="r-stars" type="number" step="0.01" placeholder="0.00"></div>
-                <div class="fg"><label class="fl">Subscriptions ($)</label><input class="fi" id="r-subs" type="number" step="0.01" placeholder="0.00"></div>
+              <div style="font-size:12px;font-weight:600;color:var(--brand3);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-device-tv"></i>CONTENT MONETIZATION ($)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+                <div class="fg"><label class="fl">In-stream Ads</label><input class="fi" id="r-instream" type="number" step="0.01" placeholder="0.00" oninput="updateRevPreview()"></div>
+                <div class="fg"><label class="fl">Reels Ads</label><input class="fi" id="r-reels" type="number" step="0.01" placeholder="0.00" oninput="updateRevPreview()"></div>
+                <div class="fg"><label class="fl">Stars</label><input class="fi" id="r-stars" type="number" step="0.01" placeholder="0.00" oninput="updateRevPreview()"></div>
+                <div class="fg"><label class="fl">Subscriptions</label><input class="fi" id="r-subs" type="number" step="0.01" placeholder="0.00" oninput="updateRevPreview()"></div>
               </div>
-              <div style="background:var(--s3);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
-                <span style="font-size:12px;color:var(--t2)">Tổng doanh thu tháng này:</span>
-                <span style="font-size:18px;font-weight:700;color:var(--grn)" id="rev-total-preview">$0.00</span>
+              <div style="font-size:12px;font-weight:600;color:var(--ora);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-gift"></i>BONUS ($)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+                <div class="fg"><label class="fl">Performance Bonus</label><input class="fi" id="r-perf-bonus" type="number" step="0.01" placeholder="0.00" oninput="updateRevPreview()"></div>
+                <div class="fg"><label class="fl">Creator Bonus</label><input class="fi" id="r-creator-bonus" type="number" step="0.01" placeholder="0.00" oninput="updateRevPreview()"></div>
+                <div class="fg"><label class="fl">Milestone Bonus</label><input class="fi" id="r-milestone-bonus" type="number" step="0.01" placeholder="0.00" oninput="updateRevPreview()"></div>
+                <div class="fg"><label class="fl">Other Bonus</label><input class="fi" id="r-other-bonus" type="number" step="0.01" placeholder="0.00" oninput="updateRevPreview()"></div>
+              </div>
+              <div style="background:var(--s3);border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div style="font-size:11px;color:var(--t3)">Content: <span id="content-preview" style="color:var(--brand3)">$0.00</span> + Bonus: <span id="bonus-preview" style="color:var(--ora)">$0.00</span></div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:11px;color:var(--t3)">Tổng tháng này</div>
+                  <div style="font-size:20px;font-weight:700;color:var(--grn)" id="rev-total-preview">$0.00</div>
+                </div>
               </div>
             </div>
             <div style="display:flex;gap:7px">
@@ -739,7 +857,7 @@ document.getElementById('li-p').addEventListener('keydown',e=>{if(e.key==='Enter
 document.getElementById('li-u').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('li-p').focus();});
 
 // NAV
-const TITLES={dashboard:'Dashboard',health:'Sức khỏe từng Page',revenue:'Doanh thu Facebook',staff:'Quản lý Nhân sự',notes:'Ghi chú',manual:'Nhập liệu thủ công',api:'Kết nối API Facebook',accounts:'Quản lý Tài khoản'};
+const TITLES={dashboard:'Dashboard — Doanh Thu',allpages:'Tất Cả Trang',health:'Sức khỏe từng Page',revenue:'Doanh thu Facebook',staff:'Quản lý Nhân sự',notes:'Ghi chú',manual:'Nhập liệu thủ công',api:'Kết nối API Facebook',accounts:'Quản lý Tài khoản'};
 window.go=function(p,el){
   document.querySelectorAll('.panel').forEach(d=>d.classList.remove('on'));
   document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('on'));
@@ -752,7 +870,7 @@ window.go=function(p,el){
 window.setPd=function(p,el){document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));el.classList.add('on');toast('Xem: '+p);};
 
 // RENDER ALL
-function renderAll(){renderTop();renderHGrid(PAGES);renderRevTbl();updCounters();updBadges();updNotePageSel();checkAlerts();updManualPageSels();renderManualSummary();}
+function renderAll(){renderTop();renderHGrid(PAGES);renderRevTbl();updCounters();updBadges();updNotePageSel();checkAlerts();updManualPageSels();renderManualSummary();updateRevDisplay();}
 
 function updCounters(){
   document.getElementById('d-pages').textContent=PAGES.length;
@@ -810,24 +928,67 @@ function getCCls(s){return s>=70?'good':s>=40?'warn':'alert';}
 
 // RENDER TOP TABLE
 function renderTop(){
-  const top=[...PAGES].sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,6);
+  const top=[...PAGES].sort((a,b)=>{
+    const aRev=(parseFloat((a.rev_in||'0').replace('$',''))||0)+(parseFloat((a.bonus_perf||'0').replace('$',''))||0);
+    const bRev=(parseFloat((b.rev_in||'0').replace('$',''))||0)+(parseFloat((b.bonus_perf||'0').replace('$',''))||0);
+    return bRev-aRev;
+  });
   document.getElementById('tbl-top').innerHTML=top.map(p=>{
-    const s=p.score||0,sc=s>=70?'bg-g':s>=40?'bg-o':'bg-r';
+    const content=(parseFloat((p.rev_in||'0').replace('$',''))||0)+(parseFloat((p.rev_re||'0').replace('$',''))||0)+(parseFloat((p.rev_st||'0').replace('$',''))||0)+(parseFloat((p.rev_su||'0').replace('$',''))||0);
+    const bonus=(parseFloat((p.bonus_perf||'0').replace('$',''))||0)+(parseFloat((p.bonus_creator||'0').replace('$',''))||0)+(parseFloat((p.bonus_milestone||'0').replace('$',''))||0)+(parseFloat((p.bonus_other||'0').replace('$',''))||0);
+    const total=content+bonus;
     return`<tr>
       <td><div class="pr"><div class="pt">${p.emoji||'📄'}</div><div><div class="pname">${p.name}</div><div class="pcat">${p.cat}</div></div></div></td>
-      <td style="font-weight:600">${p.followers||'—'}</td>
-      <td>${p.reach||'—'}</td>
+      <td style="color:var(--brand3);font-weight:600">${content>0?'$'+content.toFixed(2):'$0.00'}</td>
+      <td style="color:var(--ora);font-weight:600">${bonus>0?'$'+bonus.toFixed(2):'$0.00'}</td>
+      <td style="font-weight:700;color:var(--grn)">${total>0?'$'+total.toFixed(2):'$0.00'}</td>
+      <td style="font-size:10.5px;color:var(--t3)">${p.rev_updated||'—'}</td>
+    </tr>`;
+  }).join('');
+  // Render allpages table
+  renderAPTable(PAGES);
+  // Update allpages counters
+  document.getElementById('ap-pages').textContent=PAGES.length;
+  document.getElementById('ap-count').textContent=PAGES.length;
+  document.getElementById('ap-active').textContent=PAGES.filter(p=>p.status==='active').length;
+  let tf=0;PAGES.forEach(p=>{tf+=parseNum(p.followers);});
+  document.getElementById('ap-fol').textContent=tf>0?fmtNum(tf):'—';
+  let tr=0;PAGES.forEach(p=>{tr+=parseNum(p.reach);});
+  document.getElementById('ap-reach').textContent=tr>0?fmtNum(tr):'—';
+  // Real On - tổng reach realtime (lấy từ page có last_sync gần nhất)
+  const recentPages=PAGES.filter(p=>p.auto_synced&&p.reach&&p.reach!=='—');
+  let realOn=0;recentPages.forEach(p=>{realOn+=parseNum(p.reach);});
+  document.getElementById('ap-real-on').textContent=realOn>0?fmtNum(realOn):'—';
+  // Cập nhật dashboard sync time
+  const dls=document.getElementById('d-last-sync');
+  if(dls&&PAGES.length>0){
+    const latest=PAGES.filter(p=>p.last_sync).sort((a,b)=>b.last_sync>a.last_sync?1:-1)[0];
+    if(latest)dls.textContent=latest.last_sync;
+  }
+  // Update dashboard revenue
+  updateRevDisplay();
+}
+
+function renderAPTable(list){
+  const tb=document.getElementById('ap-tbl');
+  if(!tb)return;
+  tb.innerHTML=list.map(p=>`
+    <tr>
+      <td><div class="pr"><div class="pt">${p.emoji||'📄'}</div><div><div class="pname">${p.name}</div><div class="pcat">${p.cat}</div></div></div></td>
+      <td style="font-weight:600;color:var(--brand3)">${p.followers||'—'}</td>
+      <td style="color:var(--sky)">${p.reach||'—'}</td>
+      <td style="color:var(--grn);font-weight:600">${p.auto_synced&&p.reach&&p.reach!=='—'?'<span class="sb-dot" style="width:5px;height:5px;margin-right:4px"></span>'+p.reach:'—'}</td>
       <td>${getTrHtml(p.fol_change)}</td>
-      <td><span class="badge ${sc}">${s}/100</span></td>
-      <td><span class="sdot ${p.status==='active'?'act':p.status==='error'?'err':'pau'}"></span>${p.status==='active'?'Tốt':p.status==='error'?'Có lỗi':'Chú ý'}</td>
+      <td style="font-size:12px">${p.mgr||'—'}</td>
+      <td><span class="sdot ${p.status==='active'?'act':p.status==='error'?'err':'pau'}"></span>${p.status==='active'?'Tốt':p.status==='error'?'Lỗi':'Chú ý'}</td>
       <td style="display:flex;gap:4px">
         <button class="tbtn tbe" onclick="openEditPage('${p.id}')"><i class="ti ti-edit" style="font-size:10px"></i></button>
         <button class="tbtn tbn" onclick="openPageNote('${p.id}','${p.name}')"><i class="ti ti-notes" style="font-size:10px"></i></button>
         <button class="tbtn tbd" onclick="cfDel('page','${p.id}','${p.name}')"><i class="ti ti-trash" style="font-size:10px"></i></button>
       </td>
-    </tr>`;
-  }).join('');
+    </tr>`).join('');
 }
+window.searchAP=function(q){renderAPTable(q?PAGES.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())):PAGES);};
 
 // RENDER HEALTH GRID
 function renderHGrid(list){
@@ -950,16 +1111,29 @@ function renderToks(){
 function renderRevTbl(){
   const tb=document.getElementById('rev-tbl');
   if(!tb)return;
-  function fmtUSD(v){if(!v||v==='—')return'$0.00';if(typeof v==='number')return'$'+v.toFixed(2);return v.startsWith('$')?v:'$'+v;}
-  tb.innerHTML=PAGES.map(p=>`
-    <tr>
-      <td><div class="pr"><div class="pt">${p.emoji||'📄'}</div><div><div class="pname">${p.name}</div></div></div></td>
-      <td style="color:var(--grn);font-weight:600">${fmtUSD(p.rev_in)}</td>
-      <td style="color:var(--sky);font-weight:600">${fmtUSD(p.rev_re)}</td>
-      <td style="color:var(--brand3);font-weight:600">${fmtUSD(p.rev_st)}</td>
-      <td style="font-weight:700;color:var(--grn)">${fmtUSD(p.rev_total)}</td>
-      <td>${p.rev_change!==undefined?getTrHtml(p.rev_change):'<span style="color:var(--t3)">—</span>'}</td>
-    </tr>`).join('');
+  function fmtUSD(v){
+    if(!v||v==='—'||v==='$0.00')return'$0.00';
+    if(typeof v==='number')return'$'+v.toFixed(2);
+    return v.startsWith('$')?v:'$'+v;
+  }
+  tb.innerHTML=PAGES.map(p=>{
+    const bonus=(parseFloat((p.bonus_perf||'0').replace('$',''))||0)+
+                (parseFloat((p.bonus_creator||'0').replace('$',''))||0)+
+                (parseFloat((p.bonus_milestone||'0').replace('$',''))||0)+
+                (parseFloat((p.bonus_other||'0').replace('$',''))||0);
+    const content=(parseFloat((p.rev_in||'0').replace('$',''))||0)+
+                  (parseFloat((p.rev_re||'0').replace('$',''))||0)+
+                  (parseFloat((p.rev_st||'0').replace('$',''))||0)+
+                  (parseFloat((p.rev_su||'0').replace('$',''))||0);
+    const total=content+bonus;
+    return`<tr>
+      <td><div class="pr"><div class="pt">${p.emoji||'📄'}</div><div><div class="pname">${p.name}</div><div class="pcat">${p.cat}</div></div></div></td>
+      <td style="color:var(--brand3);font-weight:600">${content>0?'$'+content.toFixed(2):'$0.00'}</td>
+      <td style="color:var(--ora);font-weight:600">${bonus>0?'$'+bonus.toFixed(2):'$0.00'}</td>
+      <td style="font-weight:700;color:var(--grn)">${total>0?'$'+total.toFixed(2):'$0.00'}</td>
+      <td style="font-size:10.5px;color:var(--t3)">${p.rev_updated||p.manual_updated||'—'}</td>
+    </tr>`;
+  }).join('');
 }
 
 // SYNC FACEBOOK API
@@ -1073,15 +1247,59 @@ window.syncAll=async function(){
 };
 
 window.fetchRev=async function(){
-  const bt=document.getElementById('biz-tok')?.value;
-  if(!bt){toast('Vui lòng nhập Business Token trong "Kết nối API"!','err');return;}
-  toast('Đang tải doanh thu từ Facebook...');
-  try{
-    // Khi có Business Token thật, Facebook trả về số $ thực tế
-    // Ví dụ: rev_total: 125.50 → hiển thị $125.50
-    toast('Cần Business Token có quyền pages_read_monetization để xem doanh thu thật!','err');
-  }catch(e){toast('Lỗi kết nối API','err');}
+  toast('Đang tải doanh thu từ Firebase...');
+  updateRevDisplay();
+  toast('Doanh thu đã cập nhật từ dữ liệu Firebase!');
 };
+
+function updateRevDisplay(){
+  // Tính tổng từ tất cả pages
+  let instream=0,reels=0,stars=0,subs=0,perfBonus=0,creatorBonus=0,milestoneBonus=0,otherBonus=0;
+  
+  PAGES.forEach(p=>{
+    instream+=parseFloat((p.rev_in||'0').replace('$',''))||0;
+    reels+=parseFloat((p.rev_re||'0').replace('$',''))||0;
+    stars+=parseFloat((p.rev_st||'0').replace('$',''))||0;
+    subs+=parseFloat((p.rev_su||'0').replace('$',''))||0;
+    perfBonus+=parseFloat((p.bonus_perf||'0').replace('$',''))||0;
+    creatorBonus+=parseFloat((p.bonus_creator||'0').replace('$',''))||0;
+    milestoneBonus+=parseFloat((p.bonus_milestone||'0').replace('$',''))||0;
+    otherBonus+=parseFloat((p.bonus_other||'0').replace('$',''))||0;
+  });
+
+  const contentTotal=instream+reels+stars+subs;
+  const bonusTotal=perfBonus+creatorBonus+milestoneBonus+otherBonus;
+  const grandTotal=contentTotal+bonusTotal;
+
+  const fmt=n=>'$'+n.toFixed(2);
+  
+  // Update UI
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=fmt(v);};
+  set('rv-grand-total',grandTotal);
+  set('rv-content-total',contentTotal);
+  set('rv-bonus-total',bonusTotal);
+  set('rv-instream',instream);
+  set('rv-reels',reels);
+  set('rv-stars',stars);
+  set('rv-subs',subs);
+  set('rv-perf-bonus',perfBonus);
+  set('rv-creator-bonus',creatorBonus);
+  set('rv-milestone-bonus',milestoneBonus);
+  set('rv-other-bonus',otherBonus);
+
+  // Update dashboard
+  const drev=document.getElementById('d-rev');if(drev)drev.textContent=fmt(grandTotal);
+  const dcr=document.getElementById('d-content-rev');if(dcr)dcr.textContent=fmt(contentTotal);
+  const dbr=document.getElementById('d-bonus-rev');if(dbr)dbr.textContent=fmt(bonusTotal);
+
+  // Update last sync time
+  const lu=document.getElementById('rv-last-update');
+  if(lu){
+    db.collection('settings').doc('sync').get().then(doc=>{
+      if(doc.exists)lu.textContent=doc.data().last_sync||'Chưa sync';
+    }).catch(()=>{});
+  }
+}
 window.addTok=async function(){await addDoc(tCol,{name:'Đang nhận diện...',page_id:'',token:'',status:'pend'});};
 
 // Tự động nhận diện page từ token
@@ -1392,28 +1610,46 @@ window.saveManualRev=async function(){
   const re=parseFloat(document.getElementById('r-reels').value)||0;
   const st=parseFloat(document.getElementById('r-stars').value)||0;
   const su=parseFloat(document.getElementById('r-subs').value)||0;
-  const total=ins+re+st+su;
+  const perfB=parseFloat(document.getElementById('r-perf-bonus').value)||0;
+  const creB=parseFloat(document.getElementById('r-creator-bonus').value)||0;
+  const milB=parseFloat(document.getElementById('r-milestone-bonus').value)||0;
+  const othB=parseFloat(document.getElementById('r-other-bonus').value)||0;
+  const contentTotal=ins+re+st+su;
+  const bonusTotal=perfB+creB+milB+othB;
+  const grandTotal=contentTotal+bonusTotal;
   const month=document.getElementById('rev-month-sel').value;
   const now=new Date().toLocaleString('vi-VN');
   await setDoc(doc(db,'pages',pid),{
     ...p,
-    rev_in:'$'+ins.toFixed(2),
-    rev_re:'$'+re.toFixed(2),
-    rev_st:'$'+st.toFixed(2),
-    rev_su:'$'+su.toFixed(2),
-    rev_total:'$'+total.toFixed(2),
-    rev_in_raw:ins,rev_re_raw:re,rev_st_raw:st,rev_su_raw:su,
-    rev_month:month,
-    rev_updated:now
+    rev_in:'$'+ins.toFixed(2),rev_re:'$'+re.toFixed(2),
+    rev_st:'$'+st.toFixed(2),rev_su:'$'+su.toFixed(2),
+    bonus_perf:'$'+perfB.toFixed(2),bonus_creator:'$'+creB.toFixed(2),
+    bonus_milestone:'$'+milB.toFixed(2),bonus_other:'$'+othB.toFixed(2),
+    rev_total:'$'+grandTotal.toFixed(2),
+    rev_month:month,rev_updated:now
   });
-  // Cập nhật tổng doanh thu trên dashboard
-  const allRev=PAGES.reduce((sum,pg)=>sum+(pg.rev_in_raw||0)+(pg.rev_re_raw||0)+(pg.rev_st_raw||0)+(pg.rev_su_raw||0),0)+total;
-  document.getElementById('rv-total').textContent='$'+allRev.toFixed(2);
-  document.getElementById('d-rev').textContent='$'+allRev.toFixed(2);
-  toast('Đã lưu doanh thu $'+total.toFixed(2)+' cho '+p.name+'!');
+  toast('Đã lưu! Content: $'+contentTotal.toFixed(2)+' + Bonus: $'+bonusTotal.toFixed(2)+' = $'+grandTotal.toFixed(2));
   document.getElementById('rev-page-form').style.display='none';
   document.getElementById('rev-page-sel').value='';
   renderManualSummary();
+  updateRevDisplay();
+};
+
+window.updateRevPreview=function(){
+  const ins=parseFloat(document.getElementById('r-instream')?.value)||0;
+  const re=parseFloat(document.getElementById('r-reels')?.value)||0;
+  const st=parseFloat(document.getElementById('r-stars')?.value)||0;
+  const su=parseFloat(document.getElementById('r-subs')?.value)||0;
+  const perfB=parseFloat(document.getElementById('r-perf-bonus')?.value)||0;
+  const creB=parseFloat(document.getElementById('r-creator-bonus')?.value)||0;
+  const milB=parseFloat(document.getElementById('r-milestone-bonus')?.value)||0;
+  const othB=parseFloat(document.getElementById('r-other-bonus')?.value)||0;
+  const content=ins+re+st+su;
+  const bonus=perfB+creB+milB+othB;
+  const total=content+bonus;
+  const cp=document.getElementById('content-preview');if(cp)cp.textContent='$'+content.toFixed(2);
+  const bp=document.getElementById('bonus-preview');if(bp)bp.textContent='$'+bonus.toFixed(2);
+  const tp=document.getElementById('rev-total-preview');if(tp)tp.textContent='$'+total.toFixed(2);
 };
 
 function renderManualSummary(){
