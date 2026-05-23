@@ -2,7 +2,6 @@ const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const https = require('https');
 
-// ── FIREBASE ADMIN ──
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
@@ -12,186 +11,153 @@ function fetchFB(url) {
     https.get(url, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try { resolve(JSON.parse(data)); }
-        catch(e) { reject(e); }
-      });
+      res.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { reject(e); } });
     }).on('error', reject);
   });
 }
 
 function fmtNum(n) {
   if (!n || isNaN(n)) return '0';
-  if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M';
-  if (n >= 10000) return Math.round(n / 1000) + 'K';
-  if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'K';
+  if (n >= 1000000) return (n/1000000).toFixed(1).replace('.0','')+'M';
+  if (n >= 10000) return Math.round(n/1000)+'K';
+  if (n >= 1000) return (n/1000).toFixed(1).replace('.0','')+'K';
   return Math.round(n).toString();
 }
 
-async function syncPage(pageId, pageName, pageToken) {
-  console.log(`  📄 Syncing: ${pageName} (${pageId})`);
-  
+// ── Đổi User Token → Page Token không hết hạn ──
+async function exchangeToPageTokens(userToken) {
+  const accounts = await fetchFB(
+    `https://graph.facebook.com/v20.0/me/accounts?fields=name,id,access_token&limit=200&access_token=${userToken}`
+  );
+  if (accounts.error || !accounts.data) return null;
+  return accounts.data; // Mỗi page có access_token riêng không hết hạn
+}
+
+async function syncOnePage(pageId, pageName, pageToken, now) {
   try {
-    // Lấy thông tin page
     const info = await fetchFB(
       `https://graph.facebook.com/v20.0/${pageId}?fields=name,fan_count,followers_count&access_token=${pageToken}`
     );
-    if (info.error) {
-      console.log(`  ❌ Lỗi: ${info.error.message}`);
-      return false;
-    }
+    if (info.error) { console.log(`  ❌ ${pageName}: ${info.error.message}`); return false; }
 
     const newFol = info.followers_count || info.fan_count || 0;
 
-    // Lấy reach
-    let reach = '—', reachNum = 0;
+    // Reach hôm nay
+    let reach = '—';
     try {
       const ins = await fetchFB(
         `https://graph.facebook.com/v20.0/${pageId}/insights?metric=page_impressions_unique&period=day&access_token=${pageToken}`
       );
       if (ins.data?.[0]?.values?.length > 0) {
-        reachNum = ins.data[0].values[ins.data[0].values.length - 1].value || 0;
-        reach = fmtNum(reachNum);
+        const rv = ins.data[0].values[ins.data[0].values.length-1].value || 0;
+        reach = fmtNum(rv);
       }
     } catch(e) {}
 
-    // Lấy views
+    // Views
     let views = '—';
     try {
       const vw = await fetchFB(
         `https://graph.facebook.com/v20.0/${pageId}/insights?metric=page_views_total&period=day&access_token=${pageToken}`
       );
       if (vw.data?.[0]?.values?.length > 0) {
-        views = fmtNum(vw.data[0].values[vw.data[0].values.length - 1].value || 0);
+        views = fmtNum(vw.data[0].values[vw.data[0].values.length-1].value || 0);
       }
     } catch(e) {}
 
-    // Tìm page trong Firebase theo pid hoặc tên
+    // Tìm page trong Firebase
     let existingDoc = null;
-    const byPid = await db.collection('pages').where('pid', '==', pageId).limit(1).get();
-    if (!byPid.empty) {
-      existingDoc = { id: byPid.docs[0].id, ...byPid.docs[0].data() };
-    } else {
-      const byName = await db.collection('pages').where('name', '==', pageName).limit(1).get();
-      if (!byName.empty) {
-        existingDoc = { id: byName.docs[0].id, ...byName.docs[0].data() };
-      }
+    const byPid = await db.collection('pages').where('pid','==',pageId).limit(1).get();
+    if (!byPid.empty) existingDoc = { id: byPid.docs[0].id, ...byPid.docs[0].data() };
+    else {
+      const byName = await db.collection('pages').where('name','==',pageName).limit(1).get();
+      if (!byName.empty) existingDoc = { id: byName.docs[0].id, ...byName.docs[0].data() };
     }
 
-    const prevFol = existingDoc ? 
-      (parseFloat((existingDoc.followers || '0').replace(/[KM]/g, m => m === 'K' ? '000' : '000000').replace(/[^0-9]/g, '')) || 0) : 0;
+    const prevFol = existingDoc ? (parseFloat((existingDoc.followers||'0').replace(/[KM]/g,m=>m==='K'?'000':'000000').replace(/[^0-9]/g,''))||0) : 0;
     const folChange = newFol - prevFol;
-    
     let score = 75;
-    if (folChange > 1000) score = Math.min(100, score + 20);
-    else if (folChange > 0) score = Math.min(100, score + 5);
-    else if (folChange < -1000) score = Math.max(10, score - 25);
-    else if (folChange < 0) score = Math.max(10, score - 10);
+    if (folChange > 1000) score = Math.min(100, score+20);
+    else if (folChange > 0) score = Math.min(100, score+5);
+    else if (folChange < -1000) score = Math.max(10, score-25);
+    else if (folChange < 0) score = Math.max(10, score-10);
 
-    const now = new Date().toLocaleString('vi-VN');
     const update = {
-      name: pageName,
-      pid: pageId,
-      followers: fmtNum(newFol),
-      reach,
-      views,
+      name: pageName, pid: pageId,
+      followers: fmtNum(newFol), reach, views,
       fol_change: folChange,
       score: Math.round(score),
       status: score < 40 ? 'error' : score < 70 ? 'warn' : 'active',
-      last_sync: now,
-      auto_synced: true
+      last_sync: now, auto_synced: true
     };
 
     if (existingDoc) {
       await db.collection('pages').doc(existingDoc.id).update(update);
-      console.log(`  ✓ Cập nhật: ${pageName} — ${fmtNum(newFol)} followers, reach: ${reach}`);
     } else {
-      await db.collection('pages').add({
-        ...update,
-        emoji: '📄',
-        cat: 'Khác',
-        trend: '+0%',
-        mgr: '—'
-      });
-      console.log(`  ✓ Thêm mới: ${pageName}`);
+      await db.collection('pages').add({ ...update, emoji:'📄', cat:'Khác', trend:'+0%', mgr:'—' });
     }
+    console.log(`  ✓ ${pageName}: ${fmtNum(newFol)} followers, reach: ${reach}`);
     return true;
   } catch(e) {
-    console.log(`  ❌ Lỗi: ${e.message}`);
+    console.log(`  ❌ ${pageName}: ${e.message}`);
     return false;
   }
 }
 
 async function main() {
-  console.log('🚀 Q2T Media — Bắt đầu sync Facebook API...');
+  console.log('🚀 Q2T Media Sync — ' + new Date().toLocaleString('vi-VN'));
   const now = new Date().toLocaleTimeString('vi-VN');
 
-  // Đọc tokens từ Firebase
   const tokensSnap = await db.collection('tokens').get();
   const tokens = tokensSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  if (tokens.length === 0) {
-    console.log('⚠️ Chưa có token nào!');
-    return;
-  }
+  if (tokens.length === 0) { console.log('⚠️ Chưa có token!'); return; }
+  console.log(`📋 ${tokens.length} token`);
 
-  console.log(`📋 Tìm thấy ${tokens.length} token`);
   let synced = 0, errors = 0;
 
   for (const t of tokens) {
     if (!t.token || t.token.length < 20) continue;
-    console.log(`\n🔄 Xử lý token: ${t.name || t.id}`);
+    console.log(`\n🔄 Token: ${t.name||t.id}`);
 
     try {
-      // Lấy danh sách tất cả page từ User Token
-      const accounts = await fetchFB(
-        `https://graph.facebook.com/v20.0/me/accounts?fields=name,id,access_token&limit=100&access_token=${t.token}`
-      );
+      // Thử lấy danh sách page (User Token)
+      const pages = await exchangeToPageTokens(t.token);
 
-      if (accounts.error) {
-        console.log(`❌ Token lỗi: ${accounts.error.message}`);
-        await db.collection('tokens').doc(t.id).update({ status: 'err' });
-        errors++;
-        continue;
-      }
+      if (pages && pages.length > 0) {
+        console.log(`  📑 ${pages.length} page`);
 
-      if (accounts.data && accounts.data.length > 0) {
-        console.log(`✓ Tìm thấy ${accounts.data.length} page`);
-        
-        for (const page of accounts.data) {
-          // Dùng page token riêng của từng page
-          const pageToken = page.access_token || t.token;
-          const ok = await syncPage(page.id, page.name, pageToken);
-          if (ok) synced++;
-          else errors++;
-          
-          // Lưu page token vào Firebase để dùng sau
-          const existing = await db.collection('tokens').where('page_id', '==', page.id).limit(1).get();
-          if (existing.empty && page.id !== t.page_id) {
+        for (const p of pages) {
+          // Dùng Page Token riêng — KHÔNG HẾT HẠN!
+          const pageToken = p.access_token || t.token;
+          const ok = await syncOnePage(p.id, p.name, pageToken, now);
+          if (ok) synced++; else errors++;
+
+          // Lưu Page Token vào Firebase để dùng sau
+          const existTok = await db.collection('tokens').where('page_id','==',p.id).limit(1).get();
+          if (existTok.empty) {
             await db.collection('tokens').add({
-              name: page.name,
-              page_id: page.id,
-              token: page.access_token,
-              status: 'ok',
-              parent_token: t.id
+              name: p.name, page_id: p.id,
+              token: p.access_token, // Page Token không hết hạn
+              status: 'ok', type: 'page'
+            });
+          } else {
+            // Cập nhật page token mới
+            await db.collection('tokens').doc(existTok.docs[0].id).update({
+              token: p.access_token, status: 'ok', last_sync: now
             });
           }
         }
 
-        await db.collection('tokens').doc(t.id).update({ 
-          status: 'ok',
-          last_sync: now,
-          pages_count: accounts.data.length
+        await db.collection('tokens').doc(t.id).update({
+          status: 'ok', last_sync: now, pages_count: pages.length
         });
 
-      } else {
-        // Thử dùng như Page Token trực tiếp
-        if (t.page_id) {
-          const ok = await syncPage(t.page_id, t.name || 'Page', t.token);
-          if (ok) synced++;
-          else errors++;
-        }
-        await db.collection('tokens').doc(t.id).update({ status: 'ok' });
+      } else if (t.page_id) {
+        // Page Token trực tiếp
+        const ok = await syncOnePage(t.page_id, t.name||'Page', t.token, now);
+        if (ok) { synced++; await db.collection('tokens').doc(t.id).update({ status:'ok', last_sync:now }); }
+        else { errors++; await db.collection('tokens').doc(t.id).update({ status:'err' }); }
       }
 
     } catch(e) {
@@ -201,18 +167,13 @@ async function main() {
     }
   }
 
-  // Lưu thời gian sync
   await db.collection('settings').doc('sync').set({
     last_sync: now,
-    last_sync_full: new Date().toISOString(),
-    synced_count: synced,
-    error_count: errors
+    last_sync_iso: new Date().toISOString(),
+    synced: synced, errors: errors
   });
 
-  console.log(`\n✅ Sync xong! ${synced} page thành công, ${errors} lỗi`);
+  console.log(`\n✅ Xong! ${synced} page ✓, ${errors} lỗi`);
 }
 
-main().catch(e => {
-  console.error('❌ Lỗi nghiêm trọng:', e);
-  process.exit(1);
-});
+main().catch(e => { console.error('❌', e); process.exit(1); });
