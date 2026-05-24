@@ -2028,7 +2028,13 @@ function renderAttSummary(key,staffList){
 // Thêm nhân sự vào bảng chấm công
 let ATT_EXTRA_STAFF = []; // Nhân sự thêm thủ công vào bảng chấm công
 
-window.openAddAttStaff=function(){
+window.openAddAttStaff=async function(){
+  // Đảm bảo load data trước khi thêm
+  const key=getAttKey();
+  try{
+    const extraSnap=await db.collection('attendance').doc(key+'_extra').get();
+    ATT_EXTRA_STAFF=extraSnap.exists?(extraSnap.data().staff||[]):[];
+  }catch(e){}
   document.getElementById('att-staff-name').value='';
   sm('m-att-staff');
 };
@@ -2050,10 +2056,15 @@ window.saveAttStaff=async function(){
 // Hàm xoá nhân sự - gọi trực tiếp từ onclick
 // Xoá theo index - không bị lỗi ký tự đặc biệt
 window.delAttIdx=async function(idx){
-  if(idx<0||idx>=ATT_EXTRA_STAFF.length)return;
+  const key=getAttKey();
+  // Load lại từ Firebase để đảm bảo đúng
+  try{
+    const snap=await db.collection('attendance').doc(key+'_extra').get();
+    ATT_EXTRA_STAFF=snap.exists?(snap.data().staff||[]):[];
+  }catch(e){}
+  if(idx<0||idx>=ATT_EXTRA_STAFF.length){toast('Lỗi index!','err');return;}
   const name=ATT_EXTRA_STAFF[idx];
   ATT_EXTRA_STAFF.splice(idx,1);
-  const key=getAttKey();
   try{
     await db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF});
     toast('Đã xoá '+name+'!');
