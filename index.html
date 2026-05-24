@@ -2000,11 +2000,13 @@ window.toggleCell=function(staffId,day,ca,key){
 
 function updateAttTotals(staffId,key){
   const cong=calcCong(staffId,key);
-  // Cập nhật ô tổng trong bảng
+  // Cập nhật ô tổng trong bảng theo class
   document.querySelectorAll('.att-total-'+staffId.replace(/[^a-zA-Z0-9]/g,'_')).forEach(el=>{
     el.textContent=cong;
   });
-  renderAttSummary(key,STAFF.length>0?STAFF:[{id:'default',name:'Nhân viên 1'}]);
+  // Dùng đúng staffList của chấm công
+  const staffList=window._attStaffList||[];
+  renderAttSummary(key,staffList);
 };
 
 window.saveAttendance=async function(){
