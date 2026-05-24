@@ -1951,6 +1951,7 @@ window.renderAttendance=async function(){
       <tbody>${rows}</tbody>
     </table>`;
 
+  window._attStaffList=staffList; // Lưu để dùng khi xoá/sửa
   renderAttSummary(key,staffList);
 
 };
@@ -2048,6 +2049,33 @@ window.saveAttStaff=async function(){
 };
 
 // Hàm xoá nhân sự - gọi trực tiếp từ onclick
+// Xoá theo index - không bị lỗi ký tự đặc biệt
+window.delAttIdx=async function(idx){
+  const staffList=window._attStaffList||[];
+  if(idx>=staffList.length)return;
+  const s=staffList[idx];
+  const name=s.name;
+  const key=getAttKey();
+  // Chỉ xoá được nhân sự thêm thủ công (extra)
+  if(!s._extra){toast('Chỉ xoá được nhân sự thêm thủ công! Nhân sự chính quản lý ở mục Nhân Sự.','err');return;}
+  ATT_EXTRA_STAFF=ATT_EXTRA_STAFF.filter(n=>n!==name);
+  try{
+    await db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF});
+    toast('Đã xoá '+name+'!');
+  }catch(e){toast('Lỗi!','err');}
+  await renderAttendance();
+};
+
+// Sửa tên theo index
+window.editAttIdx=async function(idx){
+  const staffList=window._attStaffList||[];
+  if(idx>=staffList.length)return;
+  const s=staffList[idx];
+  const newName=prompt('Sửa tên nhân sự:',s.name);
+  if(!newName||!newName.trim()||newName.trim()===s.name)return;
+  await renameAttStaff(s.name,newName.trim());
+};
+
 window.delAttStaff=async function(name){
   const key=getAttKey();
   ATT_EXTRA_STAFF=ATT_EXTRA_STAFF.filter(n=>n!==name);
