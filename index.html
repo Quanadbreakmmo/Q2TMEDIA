@@ -1952,26 +1952,7 @@ window.renderAttendance=async function(){
     </table>`;
 
   renderAttSummary(key,staffList);
-  // Gắn event cho tất cả nút xoá - dùng setTimeout đợi DOM render
-  setTimeout(()=>{
-    document.querySelectorAll('.att-del-btn').forEach(btn=>{
-      btn.addEventListener('click',function(e){
-        e.stopPropagation();
-        const name=this.getAttribute('data-name');
-        if(name)removeAttStaff(name);
-      });
-    });
-    document.querySelectorAll('.att-edit-btn').forEach(btn=>{
-      btn.addEventListener('click',function(e){
-        e.stopPropagation();
-        const oldName=this.getAttribute('data-name');
-        const newName=prompt('Sửa tên nhân sự:',oldName);
-        if(newName&&newName.trim()&&newName.trim()!==oldName){
-          renameAttStaff(oldName,newName.trim());
-        }
-      });
-    });
-  },100);
+
 };
 
 let attSaveTimer=null;
@@ -2066,6 +2047,24 @@ window.saveAttStaff=async function(){
   }catch(e){toast('Lỗi!','err');}
 };
 
+// Hàm xoá nhân sự - gọi trực tiếp từ onclick
+window.delAttStaff=async function(name){
+  const key=getAttKey();
+  ATT_EXTRA_STAFF=ATT_EXTRA_STAFF.filter(n=>n!==name);
+  try{
+    await db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF});
+    toast('Đã xoá '+name+'!');
+  }catch(e){}
+  await renderAttendance();
+};
+
+// Hàm sửa tên - gọi trực tiếp từ onclick
+window.editAttName=async function(oldName){
+  const newName=prompt('Sửa tên nhân sự:',oldName);
+  if(!newName||!newName.trim()||newName.trim()===oldName)return;
+  await renameAttStaff(oldName,newName.trim());
+};
+
 window.renameAttStaff=async function(oldName,newName){
   const key=getAttKey();
   // Đổi tên trong extra staff
@@ -2085,18 +2084,7 @@ window.renameAttStaff=async function(oldName,newName){
   await renderAttendance();
 };
 
-window.removeAttStaff=async function(staffName){
-  const key=getAttKey();
-  // Xoá khỏi danh sách extra staff theo tên
-  ATT_EXTRA_STAFF=ATT_EXTRA_STAFF.filter(n=>n!==staffName);
-  try{
-    await db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF});
-    toast('Đã xoá '+staffName+' khỏi bảng tháng này!');
-  }catch(e){
-    console.log('Remove error:',e);
-  }
-  await renderAttendance();
-};
+
 
 window.exportAtt=function(){
   const key=getAttKey();
