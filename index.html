@@ -1880,10 +1880,8 @@ window.renderAttendance=async function(){
     ATT_EXTRA_STAFF=extraSnap.exists?(extraSnap.data().staff||[]):[];
   }catch(e){ATT_DATA[key]={};}
 
-  // Danh sách nhân sự = từ mục Nhân Sự + thêm thủ công trong bảng chấm công
-  const baseStaff=STAFF.length>0?STAFF:[{id:'default',name:'Nhân viên 1'}];
-  const extraStaffObjs=ATT_EXTRA_STAFF.filter(n=>!baseStaff.find(s=>s.name===n)).map(n=>({id:n,name:n,_extra:true}));
-  const staffList=[...baseStaff,...extraStaffObjs];
+  // Danh sách nhân sự chấm công = CHỈ từ ATT_EXTRA_STAFF (độc lập hoàn toàn)
+  const staffList=ATT_EXTRA_STAFF.map((name,i)=>({id:'att_'+i,name:name,_extra:true}));
 
   // Build header ngày
   let dayHeaders='<th class="att-th-day">Ca</th>';
@@ -2038,9 +2036,10 @@ window.openAddAttStaff=function(){
 window.saveAttStaff=async function(){
   const name=document.getElementById('att-staff-name').value.trim();
   if(!name){toast('Nhập tên nhân sự!','err');return;}
+  if(ATT_EXTRA_STAFF.includes(name)){toast('Tên này đã có trong bảng!','err');return;}
+  ATT_EXTRA_STAFF.push(name);
   const key=getAttKey();
   try{
-    if(!ATT_EXTRA_STAFF.includes(name))ATT_EXTRA_STAFF.push(name);
     await db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF});
     cm('m-att-staff');
     toast('Đã thêm '+name+' vào bảng!');
@@ -2051,14 +2050,10 @@ window.saveAttStaff=async function(){
 // Hàm xoá nhân sự - gọi trực tiếp từ onclick
 // Xoá theo index - không bị lỗi ký tự đặc biệt
 window.delAttIdx=async function(idx){
-  const staffList=window._attStaffList||[];
-  if(idx>=staffList.length)return;
-  const s=staffList[idx];
-  const name=s.name;
+  if(idx<0||idx>=ATT_EXTRA_STAFF.length)return;
+  const name=ATT_EXTRA_STAFF[idx];
+  ATT_EXTRA_STAFF.splice(idx,1);
   const key=getAttKey();
-  // Chỉ xoá được nhân sự thêm thủ công (extra)
-  if(!s._extra){toast('Chỉ xoá được nhân sự thêm thủ công! Nhân sự chính quản lý ở mục Nhân Sự.','err');return;}
-  ATT_EXTRA_STAFF=ATT_EXTRA_STAFF.filter(n=>n!==name);
   try{
     await db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF});
     toast('Đã xoá '+name+'!');
@@ -2068,12 +2063,25 @@ window.delAttIdx=async function(idx){
 
 // Sửa tên theo index
 window.editAttIdx=async function(idx){
-  const staffList=window._attStaffList||[];
-  if(idx>=staffList.length)return;
-  const s=staffList[idx];
-  const newName=prompt('Sửa tên nhân sự:',s.name);
-  if(!newName||!newName.trim()||newName.trim()===s.name)return;
-  await renameAttStaff(s.name,newName.trim());
+  if(idx<0||idx>=ATT_EXTRA_STAFF.length)return;
+  const oldName=ATT_EXTRA_STAFF[idx];
+  const newName=prompt('Sửa tên nhân sự:',oldName);
+  if(!newName||!newName.trim()||newName.trim()===oldName)return;
+  ATT_EXTRA_STAFF[idx]=newName.trim();
+  const key=getAttKey();
+  // Đổi tên trong data chấm công
+  if(ATT_DATA[key]&&ATT_DATA[key][oldName]){
+    ATT_DATA[key][newName.trim()]=ATT_DATA[key][oldName];
+    delete ATT_DATA[key][oldName];
+  }
+  try{
+    await Promise.all([
+      db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF}),
+      db.collection('attendance').doc(key).set(ATT_DATA[key]||{})
+    ]);
+    toast('Đã đổi tên thành: '+newName.trim());
+  }catch(e){toast('Lỗi!','err');}
+  await renderAttendance();
 };
 
 window.delAttStaff=async function(name){
