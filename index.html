@@ -456,7 +456,7 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
                 <th>Reach hôm nay</th>
                 <th>Real On</th>
                 <th>Tăng trưởng</th>
-                <th>Nhân sự</th>
+                <th>Nhân sự phụ trách</th>
                 <th>Trạng thái</th>
                 <th>Thao tác</th>
               </tr>
@@ -956,22 +956,38 @@ function renderTop(){
 function renderAPTable(list){
   const tb=document.getElementById('ap-tbl');
   if(!tb)return;
-  tb.innerHTML=list.map(p=>`
-    <tr>
+  tb.innerHTML=list.map(p=>{
+    const staffOpts=STAFF.map(s=>`<option value="${s.name}" ${p.mgr===s.name?'selected':''}>${s.name}</option>`).join('');
+    return`<tr>
       <td><div class="pr"><div class="pt">${p.emoji||'📄'}</div><div><div class="pname">${p.name}</div><div class="pcat">${p.cat}</div></div></div></td>
       <td style="font-weight:600;color:var(--brand3)">${p.followers||'—'}</td>
       <td style="color:var(--sky)">${p.reach||'—'}</td>
       <td style="color:var(--grn);font-weight:600">${p.auto_synced&&p.reach&&p.reach!=='—'?'<span class="sb-dot" style="width:5px;height:5px;margin-right:4px"></span>'+p.reach:'—'}</td>
       <td>${getTrHtml(p.fol_change)}</td>
-      <td style="font-size:12px">${p.mgr||'—'}</td>
+      <td>
+        <select class="fs" style="width:140px;padding:5px 8px;font-size:11.5px;background:var(--s3);border-color:var(--bdr2)" onchange="assignStaff('${p.id}',this.value)">
+          <option value="">— Chưa phân công —</option>
+          ${staffOpts}
+        </select>
+      </td>
       <td><span class="sdot ${p.status==='active'?'act':p.status==='error'?'err':'pau'}"></span>${p.status==='active'?'Tốt':p.status==='error'?'Lỗi':'Chú ý'}</td>
       <td style="display:flex;gap:4px">
         <button class="tbtn tbe" onclick="openEditPage('${p.id}')"><i class="ti ti-edit" style="font-size:10px"></i></button>
         <button class="tbtn tbn" onclick="openPageNote('${p.id}','${p.name}')"><i class="ti ti-notes" style="font-size:10px"></i></button>
         <button class="tbtn tbd" onclick="cfDel('page','${p.id}','${p.name}')"><i class="ti ti-trash" style="font-size:10px"></i></button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
+window.searchAP=function(q){renderAPTable(q?PAGES.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())):PAGES);};
+
+// Gán nhân sự cho page
+window.assignStaff=async function(pid,staffName){
+  const p=PAGES.find(x=>x.id===pid);
+  if(!p)return;
+  await setDoc(doc(db,'pages',pid),{...p,mgr:staffName});
+  toast(staffName?'Đã phân công: '+staffName:'Đã bỏ phân công!');
+};
 window.searchAP=function(q){renderAPTable(q?PAGES.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())):PAGES);};
 
 // RENDER HEALTH GRID
