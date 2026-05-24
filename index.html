@@ -259,26 +259,26 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
 
 /* ATTENDANCE */
 .att-table{border-collapse:collapse;min-width:100%}
-.att-table th{padding:5px 6px;text-align:center;color:#4B5563;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;border:1px solid #E5E7EB;background:#F9FAFB;white-space:nowrap;font-weight:700}
-.att-table td{padding:0;border:1px solid #E5E7EB;text-align:center;vertical-align:middle}
-.att-name{padding:0 10px;text-align:left;font-size:12px;font-weight:600;white-space:nowrap;background:#F3F4F6;min-width:140px;color:#111827;height:22px;line-height:22px}
-.att-ca{padding:0 8px;font-size:10px;color:#6B7280;background:#F9FAFB;white-space:nowrap;height:22px;line-height:22px}
-.att-stt{padding:0 8px;font-size:12px;color:#6B7280;background:#F3F4F6;text-align:center;height:44px;vertical-align:middle}
-.att-cell{width:34px;height:22px;cursor:pointer;transition:all .1s;position:relative}
-.att-cell:hover{background:#DBEAFE}
-.att-cell.x-val{background:#EFF6FF}
-.att-cell.xx-val{background:#F0FDF4}
-.att-cell.cn{background:#FEF2F2}
-.att-cell.t7{background:#FFF7ED}
+.att-table th{padding:5px 6px;text-align:center;color:var(--t3);font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;border:1px solid var(--bdr2);background:var(--s2);white-space:nowrap;font-weight:700}
+.att-table td{padding:0;border:1px solid var(--bdr2);text-align:center;vertical-align:middle}
+.att-name{padding:0 10px;text-align:left;font-size:12px;font-weight:600;white-space:nowrap;background:var(--s2);min-width:140px;color:var(--t1);height:22px;line-height:22px}
+.att-ca{padding:0 8px;font-size:10px;color:var(--t3);background:var(--s2);white-space:nowrap;height:22px;line-height:22px}
+.att-stt{padding:0 8px;font-size:12px;color:var(--t3);background:var(--s2);text-align:center;height:44px;vertical-align:middle}
+.att-cell{width:34px;height:22px;cursor:pointer;transition:all .1s;position:relative;background:var(--dark3)}
+.att-cell:hover{background:rgba(37,99,235,0.15)}
+.att-cell.x-val{background:rgba(37,99,235,0.12)}
+.att-cell.xx-val{background:rgba(34,197,94,0.12)}
+.att-cell.cn{background:rgba(239,68,68,0.08)}
+.att-cell.t7{background:rgba(249,115,22,0.08)}
 .att-val{font-size:11px;font-weight:700;line-height:22px;display:block}
-.att-val.x{color:#2563EB}
-.att-val.xx{color:#16A34A}
-.att-total{padding:0 10px;font-size:13px;font-weight:700;color:#16A34A;background:#F0FDF4;white-space:nowrap;height:44px;vertical-align:middle;border-left:2px solid #86EFAC}
+.att-val.x{color:var(--brand3)}
+.att-val.xx{color:var(--grn)}
+.att-total{padding:0 10px;font-size:13px;font-weight:700;color:var(--grn);background:rgba(34,197,94,0.08);white-space:nowrap;height:44px;vertical-align:middle;border-left:2px solid rgba(34,197,94,0.3)}
 .att-th-day{min-width:34px;font-size:9.5px}
-.att-th-cn{color:#DC2626!important;background:#FEF2F2!important}
-.att-th-t7{color:#D97706!important;background:#FFF7ED!important}
-.att-row-odd{background:#FFFFFF}
-.att-row-even{background:#F9FAFB}
+.att-th-cn{color:var(--red)!important;background:rgba(239,68,68,0.08)!important}
+.att-th-t7{color:var(--ora)!important;background:rgba(249,115,22,0.06)!important}
+.att-row-odd{background:var(--s1)}
+.att-row-even{background:var(--dark3)}
 
 /* TOAST */
 .toast{position:fixed;top:60px;right:16px;background:var(--s1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:10px 14px;font-size:12.5px;z-index:9000;display:none;align-items:center;gap:8px;max-width:300px;box-shadow:0 6px 20px rgba(0,0,0,.5)}
@@ -2037,37 +2037,27 @@ window.openAddAttStaff=function(){
 window.saveAttStaff=async function(){
   const name=document.getElementById('att-staff-name').value.trim();
   if(!name){toast('Nhập tên nhân sự!','err');return;}
-  // Lưu vào Firebase
   const key=getAttKey();
   try{
-    const snap=await db.collection('attendance').doc(key+'_extra').get();
-    const extra=snap.exists?snap.data().staff||[]:[...ATT_EXTRA_STAFF];
-    if(!extra.includes(name))extra.push(name);
-    await db.collection('attendance').doc(key+'_extra').set({staff:extra});
-    ATT_EXTRA_STAFF=extra;
+    if(!ATT_EXTRA_STAFF.includes(name))ATT_EXTRA_STAFF.push(name);
+    await db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF});
     cm('m-att-staff');
     toast('Đã thêm '+name+' vào bảng!');
-    renderAttendance();
+    await renderAttendance();
   }catch(e){toast('Lỗi!','err');}
 };
 
-window.removeAttStaff=async function(staffId){
+window.removeAttStaff=async function(staffName){
   const key=getAttKey();
-  // Xoá khỏi extra staff nếu là nhân sự thêm thủ công
-  ATT_EXTRA_STAFF=ATT_EXTRA_STAFF.filter(n=>n!==staffId&&(staffId.replace(/[^a-zA-Z0-9]/g,'_'))!==staffId);
+  // Xoá khỏi danh sách extra staff theo tên
+  ATT_EXTRA_STAFF=ATT_EXTRA_STAFF.filter(n=>n!==staffName);
   try{
-    const snap=await db.collection('attendance').doc(key+'_extra').get();
-    if(snap.exists){
-      const extra=(snap.data().staff||[]).filter(n=>n!==staffId);
-      await db.collection('attendance').doc(key+'_extra').set({staff:extra});
-      ATT_EXTRA_STAFF=extra;
-    }
-    toast('Đã xoá khỏi bảng tháng này!');
-    renderAttendance();
+    await db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF});
+    toast('Đã xoá '+staffName+' khỏi bảng tháng này!');
   }catch(e){
-    toast('Đã xoá!');
-    renderAttendance();
+    console.log('Remove error:',e);
   }
+  await renderAttendance();
 };
 
 window.exportAtt=function(){
