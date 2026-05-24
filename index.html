@@ -925,9 +925,10 @@ window.setPd=function(p,el){document.querySelectorAll('.ptab').forEach(t=>t.clas
 function renderAll(){renderTop();renderHGrid(PAGES);renderRevTbl();updCounters();updBadges();updNotePageSel();checkAlerts();updManualPageSels();renderManualSummary();updateRevDisplay();}
 
 function updCounters(){
-  document.getElementById('d-pages').textContent=PAGES.length;
-  document.getElementById('hp-cnt').textContent=PAGES.length;
-  document.getElementById('d-active').textContent=PAGES.filter(p=>p.status==='active').length;
+  const setEl=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  setEl('d-pages',PAGES.length);
+  setEl('hp-cnt',PAGES.length);
+  setEl('d-active',PAGES.filter(p=>p.status==='active').length);
   // Parse số: hỗ trợ 106K, 1.8M, 106000, 1800000
   function parseNum(s){
     if(!s||s==='—'||s===''||s===null||s===undefined)return 0;
@@ -944,19 +945,21 @@ function updCounters(){
     return n.toLocaleString('vi-VN');
   }
   let tf=0;PAGES.forEach(p=>{tf+=parseNum(p.followers);});
-  document.getElementById('d-fol').textContent=tf>0?fmtNum(tf):'—';
+  const dfolEl=document.getElementById('d-fol');if(dfolEl)dfolEl.textContent=tf>0?fmtNum(tf):'—';
   let tr=0;PAGES.forEach(p=>{tr+=parseNum(p.reach);});
-  document.getElementById('d-reach').textContent=tr>0?fmtNum(tr):'—';
+  const dreachEl=document.getElementById('d-reach');if(dreachEl)dreachEl.textContent=tr>0?fmtNum(tr):'—';
 }
 
 function updBadges(){
-  document.getElementById('b-pages').textContent=PAGES.length;
-  document.getElementById('b-staff').textContent=STAFF.length;
-  document.getElementById('b-notes').textContent=NOTES.length;
+  const setEl=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  const setDisp=(id,val)=>{const el=document.getElementById(id);if(el)el.style.display=val;};
+  setEl('b-pages',PAGES.length);
+  setEl('b-staff',STAFF.length);
+  setEl('b-notes',NOTES.length);
   const al=PAGES.filter(p=>(p.score||50)<50).length;
-  document.getElementById('b-alerts').textContent=al;
-  document.getElementById('b-alerts').style.display=al>0?'':'none';
-  document.getElementById('notif-dot').style.display=al>0?'':'none';
+  setEl('b-alerts',al);
+  setDisp('b-alerts',al>0?'':'none');
+  setDisp('notif-dot',al>0?'':'none');
 }
 
 function checkAlerts(){
@@ -2042,15 +2045,23 @@ window.openAddAttStaff=async function(){
 window.saveAttStaff=async function(){
   const name=document.getElementById('att-staff-name').value.trim();
   if(!name){toast('Nhập tên nhân sự!','err');return;}
+  const key=getAttKey();
+  // Load lại từ Firebase trước
+  try{
+    const snap=await db.collection('attendance').doc(key+'_extra').get();
+    ATT_EXTRA_STAFF=snap.exists?(snap.data().staff||[]):[];
+  }catch(e){ATT_EXTRA_STAFF=[];}
   if(ATT_EXTRA_STAFF.includes(name)){toast('Tên này đã có trong bảng!','err');return;}
   ATT_EXTRA_STAFF.push(name);
-  const key=getAttKey();
   try{
-    await db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF});
+    await db.collection('attendance').doc(key+'_extra').set({staff:[...ATT_EXTRA_STAFF]});
     cm('m-att-staff');
-    toast('Đã thêm '+name+' vào bảng!');
+    toast('Đã thêm '+name+'!');
     await renderAttendance();
-  }catch(e){toast('Lỗi!','err');}
+  }catch(e){
+    console.error('saveAttStaff error:',e);
+    toast('Lỗi Firebase: '+e.message,'err');
+  }
 };
 
 // Hàm xoá nhân sự - gọi trực tiếp từ onclick
