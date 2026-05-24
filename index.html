@@ -531,9 +531,10 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
         <!-- Header chọn tháng/năm -->
         <div class="card" style="margin-bottom:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-            <div style="display:flex;align-items:center;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
               <div style="font-size:16px;font-weight:700;letter-spacing:-0.3px">📅 Bảng Chấm Công</div>
               <span style="background:var(--s3);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--brand3);font-weight:600" id="att-team">TEAM FB</span>
+              <button class="btn btn-b" onclick="openAddAttStaff()" style="padding:4px 10px;font-size:11px"><i class="ti ti-user-plus"></i>Thêm nhân sự</button>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
               <div style="font-size:12px;color:var(--t3)">Tháng:</div>
@@ -780,6 +781,12 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
   <input type="hidden" id="mnp-pid">
   <div class="fg"><label class="fl">Nội dung ghi chú</label><textarea class="fta" id="mnp-inp" placeholder="Nhập ghi chú..."></textarea></div>
   <div class="btn-row"><button class="btn btn-out" onclick="cm('m-note-pg')">Hủy</button><button class="btn btn-b" onclick="savePageNote()">Lưu ghi chú</button></div>
+</div></div>
+
+<div class="overlay" id="m-att-staff"><div class="modal" style="width:360px">
+  <div class="modal-hdr"><div class="modal-t">Thêm nhân sự chấm công</div><button class="cbtn" onclick="cm('m-att-staff')"><i class="ti ti-x"></i></button></div>
+  <div class="fg"><label class="fl">Họ và tên</label><input class="fi" id="att-staff-name" placeholder="Nguyễn Văn A" onkeydown="if(event.key==='Enter')saveAttStaff()"></div>
+  <div class="btn-row"><button class="btn btn-out" onclick="cm('m-att-staff')">Huỷ</button><button class="btn btn-b" onclick="saveAttStaff()">Thêm vào bảng</button></div>
 </div></div>
 
 <div class="overlay" id="m-cf"><div class="cfbox">
@@ -1862,12 +1869,19 @@ window.renderAttendance=async function(){
 
   // Load data từ Firebase
   try{
-    const snap=await db.collection('attendance').doc(key).get();
+    const [snap,extraSnap]=await Promise.all([
+      db.collection('attendance').doc(key).get(),
+      db.collection('attendance').doc(key+'_extra').get()
+    ]);
     if(snap.exists)ATT_DATA[key]=snap.data();
     else ATT_DATA[key]={};
+    ATT_EXTRA_STAFF=extraSnap.exists?(extraSnap.data().staff||[]):[];
   }catch(e){ATT_DATA[key]={};}
 
-  const staffList=STAFF.length>0?STAFF:[{id:'default',name:'Nhân viên 1'}];
+  // Danh sách nhân sự = từ mục Nhân Sự + thêm thủ công trong bảng chấm công
+  const baseStaff=STAFF.length>0?STAFF:[{id:'default',name:'Nhân viên 1'}];
+  const extraStaffObjs=ATT_EXTRA_STAFF.filter(n=>!baseStaff.find(s=>s.name===n)).map(n=>({id:n,name:n,_extra:true}));
+  const staffList=[...baseStaff,...extraStaffObjs];
 
   // Build header ngày
   let dayHeaders='<th class="att-th-day">Ca</th>';
@@ -1908,10 +1922,13 @@ window.renderAttendance=async function(){
     rows+=`
     <tr>
       <td class="att-stt" rowspan="2">${idx+1}</td>
-      <td class="att-name" rowspan="2">${s.name}</td>
+      <td class="att-name" rowspan="2" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 10px">
+        <span>${s.name}</span>
+        <button onclick="removeAttStaff('${sid}')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red);border-radius:5px;padding:2px 6px;cursor:pointer;font-size:10px;white-space:nowrap" title="Xoá khỏi bảng chấm công"><i class="ti ti-x"></i></button>
+      </td>
       <td class="att-ca">Sáng</td>
       ${sangCells}
-      <td class="att-total" rowspan="2">${cong}</td>
+      <td class="att-total att-total-${sid.replace(/[^a-zA-Z0-9]/g,'_')}" rowspan="2">${cong}</td>
     </tr>
     <tr>
       <td class="att-ca">Chiều</td>
@@ -1935,6 +1952,7 @@ window.renderAttendance=async function(){
   renderAttSummary(key,staffList);
 };
 
+let attSaveTimer=null;
 window.toggleCell=function(staffId,day,ca,key){
   if(!ATT_DATA[key])ATT_DATA[key]={};
   if(!ATT_DATA[key][staffId])ATT_DATA[key][staffId]={};
@@ -1942,7 +1960,40 @@ window.toggleCell=function(staffId,day,ca,key){
   const cur=ATT_DATA[key][staffId][day][ca]||'';
   const next=cur===''?'x':cur==='x'?'xx':'';
   ATT_DATA[key][staffId][day][ca]=next;
-  renderAttendance();
+  // Cập nhật UI trực tiếp
+  const cell=event.currentTarget;
+  cell.className=`att-cell ${next==='xx'?'xx-val':next==='x'?'x-val':''} ${cell.className.includes('cn')?'cn':''}`;
+  cell.querySelector('.att-val').className=`att-val ${next}`;
+  cell.querySelector('.att-val').textContent=next;
+  // Cập nhật tổng công
+  updateAttTotals(staffId,key);
+  // Tự động lưu Firebase sau 1 giây (debounce)
+  clearTimeout(attSaveTimer);
+  attSaveTimer=setTimeout(async()=>{
+    try{
+      await db.collection('attendance').doc(key).set(ATT_DATA[key]||{});
+      // Hiện icon lưu nhỏ
+      const saveBtn=document.querySelector('[onclick="saveAttendance()"]');
+      if(saveBtn){
+        saveBtn.innerHTML='<i class="ti ti-circle-check"></i> Đã lưu';
+        saveBtn.style.background='rgba(34,197,94,0.15)';
+        saveBtn.style.color='var(--grn)';
+        setTimeout(()=>{
+          saveBtn.innerHTML='<i class="ti ti-device-floppy"></i>Lưu';
+          saveBtn.style.background='';saveBtn.style.color='';
+        },2000);
+      }
+    }catch(e){console.log('Auto save error:',e);}
+  },1000);
+};
+
+function updateAttTotals(staffId,key){
+  const cong=calcCong(staffId,key);
+  // Cập nhật ô tổng trong bảng
+  document.querySelectorAll('.att-total-'+staffId.replace(/[^a-zA-Z0-9]/g,'_')).forEach(el=>{
+    el.textContent=cong;
+  });
+  renderAttSummary(key,STAFF.length>0?STAFF:[{id:'default',name:'Nhân viên 1'}]);
 };
 
 window.saveAttendance=async function(){
@@ -1970,6 +2021,50 @@ function renderAttSummary(key,staffList){
     </tr>`;
   }).join('');
 }
+
+// Thêm nhân sự vào bảng chấm công
+let ATT_EXTRA_STAFF = []; // Nhân sự thêm thủ công vào bảng chấm công
+
+window.openAddAttStaff=function(){
+  document.getElementById('att-staff-name').value='';
+  sm('m-att-staff');
+};
+
+window.saveAttStaff=async function(){
+  const name=document.getElementById('att-staff-name').value.trim();
+  if(!name){toast('Nhập tên nhân sự!','err');return;}
+  // Lưu vào Firebase
+  const key=getAttKey();
+  try{
+    const snap=await db.collection('attendance').doc(key+'_extra').get();
+    const extra=snap.exists?snap.data().staff||[]:[...ATT_EXTRA_STAFF];
+    if(!extra.includes(name))extra.push(name);
+    await db.collection('attendance').doc(key+'_extra').set({staff:extra});
+    ATT_EXTRA_STAFF=extra;
+    cm('m-att-staff');
+    toast('Đã thêm '+name+' vào bảng!');
+    renderAttendance();
+  }catch(e){toast('Lỗi!','err');}
+};
+
+window.removeAttStaff=async function(staffId){
+  const key=getAttKey();
+  // Xoá khỏi extra staff nếu là nhân sự thêm thủ công
+  ATT_EXTRA_STAFF=ATT_EXTRA_STAFF.filter(n=>n!==staffId&&(staffId.replace(/[^a-zA-Z0-9]/g,'_'))!==staffId);
+  try{
+    const snap=await db.collection('attendance').doc(key+'_extra').get();
+    if(snap.exists){
+      const extra=(snap.data().staff||[]).filter(n=>n!==staffId);
+      await db.collection('attendance').doc(key+'_extra').set({staff:extra});
+      ATT_EXTRA_STAFF=extra;
+    }
+    toast('Đã xoá khỏi bảng tháng này!');
+    renderAttendance();
+  }catch(e){
+    toast('Đã xoá!');
+    renderAttendance();
+  }
+};
 
 window.exportAtt=function(){
   const key=getAttKey();
