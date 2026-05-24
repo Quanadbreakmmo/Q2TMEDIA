@@ -257,6 +257,26 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
 .bg-r{background:rgba(239,68,68,.12);color:var(--red)}
 .bg-o{background:rgba(249,115,22,.12);color:var(--ora)}
 
+/* ATTENDANCE */
+.att-table{border-collapse:collapse;min-width:100%}
+.att-table th{padding:6px 8px;text-align:center;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border:1px solid var(--bdr2);background:var(--s2);white-space:nowrap;font-weight:600}
+.att-table td{padding:0;border:1px solid var(--bdr2);text-align:center;vertical-align:middle}
+.att-name{padding:8px 12px;text-align:left;font-size:12.5px;font-weight:600;white-space:nowrap;background:var(--s2);min-width:140px}
+.att-ca{padding:4px 8px;font-size:10px;color:var(--t3);background:var(--s2);white-space:nowrap}
+.att-stt{padding:6px 8px;font-size:12px;color:var(--t3);background:var(--s2);text-align:center}
+.att-cell{width:36px;height:28px;cursor:pointer;transition:all .12s;position:relative}
+.att-cell:hover{background:rgba(37,99,235,0.1)}
+.att-cell.x-val{background:rgba(37,99,235,0.15)}
+.att-cell.xx-val{background:rgba(34,197,94,0.15)}
+.att-cell.cn{background:rgba(239,68,68,0.05)}
+.att-val{font-size:11px;font-weight:700;line-height:28px}
+.att-val.x{color:var(--brand3)}
+.att-val.xx{color:var(--grn)}
+.att-total{padding:6px 10px;font-size:13px;font-weight:700;color:var(--grn);background:rgba(34,197,94,0.08);white-space:nowrap}
+.att-th-day{min-width:36px;font-size:10px}
+.att-th-cn{color:var(--red)!important}
+.att-th-t7{color:var(--ora)!important}
+
 /* TOAST */
 .toast{position:fixed;top:60px;right:16px;background:var(--s1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:10px 14px;font-size:12.5px;z-index:9000;display:none;align-items:center;gap:8px;max-width:300px;box-shadow:0 6px 20px rgba(0,0,0,.5)}
 .toast.show{display:flex;animation:tsl .25s ease}
@@ -308,6 +328,7 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
       <div class="sb-item" onclick="go('notes',this)"><i class="ti ti-notes"></i>Ghi chú<span class="sb-badge" id="b-notes">0</span></div>
       <div class="sb-sec">Cài đặt</div>
       <div class="sb-item" onclick="go('manual',this)"><i class="ti ti-edit"></i>Nhập liệu thủ công</div>
+      <div class="sb-item" onclick="go('attendance',this)"><i class="ti ti-calendar-check"></i>Chấm Công</div>
       <div class="sb-item" onclick="go('api',this)"><i class="ti ti-plug"></i>Kết nối API</div>
       <div class="sb-item" onclick="go('accounts',this)"><i class="ti ti-shield-lock"></i>Tài khoản</div>
     </nav>
@@ -503,6 +524,54 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
           <div style="display:flex;justify-content:flex-end"><button class="btn btn-b" onclick="saveNote()"><i class="ti ti-device-floppy"></i>Lưu ghi chú</button></div>
         </div>
         <div id="notes-list"></div>
+      </div>
+
+      <!-- CHẤM CÔNG -->
+      <div class="panel" id="panel-attendance">
+        <!-- Header chọn tháng/năm -->
+        <div class="card" style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="font-size:16px;font-weight:700;letter-spacing:-0.3px">📅 Bảng Chấm Công</div>
+              <span style="background:var(--s3);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--brand3);font-weight:600" id="att-team">TEAM FB</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="font-size:12px;color:var(--t3)">Tháng:</div>
+              <select class="fs" id="att-month" style="width:100px;padding:6px 10px;font-size:12px" onchange="renderAttendance()">
+                <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+                <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+                <option value="5" selected>Tháng 5</option><option value="6">Tháng 6</option>
+                <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+                <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+                <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+              </select>
+              <div style="font-size:12px;color:var(--t3)">Năm:</div>
+              <input class="fi" id="att-year" type="number" value="2026" style="width:80px;padding:6px 10px;font-size:12px" onchange="renderAttendance()">
+              <button class="btn btn-b" onclick="saveAttendance()"><i class="ti ti-device-floppy"></i>Lưu</button>
+              <button class="btn btn-out" onclick="exportAtt()"><i class="ti ti-download"></i>Xuất CSV</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chú thích -->
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+          <div style="background:var(--s2);border-radius:8px;padding:6px 12px;font-size:11.5px;display:flex;align-items:center;gap:6px"><span style="background:var(--brand2);color:#fff;padding:1px 7px;border-radius:4px;font-weight:700;font-size:11px">x</span>= 0.5 công (sáng hoặc chiều)</div>
+          <div style="background:var(--s2);border-radius:8px;padding:6px 12px;font-size:11.5px;display:flex;align-items:center;gap:6px"><span style="background:var(--grn);color:#fff;padding:1px 7px;border-radius:4px;font-weight:700;font-size:11px">xx</span>= 0.5 công × 2 lương (ngày lễ)</div>
+          <div style="background:var(--s2);border-radius:8px;padding:6px 12px;font-size:11.5px;display:flex;align-items:center;gap:6px"><span style="background:var(--s3);color:var(--t2);padding:1px 7px;border-radius:4px;font-size:11px">trống</span>= nghỉ</div>
+          <div style="background:var(--s2);border-radius:8px;padding:6px 12px;font-size:11.5px;color:var(--t2)">Click ô để chuyển: <strong style="color:var(--t1)">trống → x → xx → trống</strong></div>
+        </div>
+
+        <!-- Bảng chấm công -->
+        <div style="overflow-x:auto">
+          <div id="att-table-wrap"></div>
+        </div>
+
+        <!-- Tổng hợp -->
+        <div class="card" style="margin-top:14px">
+          <div class="card-hdr"><div class="card-title">📊 Tổng hợp công tháng</div></div>
+          <table><thead><tr><th>STT</th><th>Họ và Tên</th><th>Tổng Công</th><th>Công thường</th><th>Công ngày lễ (x2)</th></tr></thead>
+          <tbody id="att-summary"></tbody></table>
+        </div>
       </div>
 
       <!-- API -->
@@ -830,7 +899,7 @@ document.getElementById('li-p').addEventListener('keydown',e=>{if(e.key==='Enter
 document.getElementById('li-u').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('li-p').focus();});
 
 // NAV
-const TITLES={dashboard:'Dashboard',allpages:'Tất Cả Trang',health:'Sức khỏe Page',staff:'Quản lý Nhân sự',notes:'Ghi chú',manual:'Nhập liệu thủ công',api:'Kết nối API Facebook',accounts:'Quản lý Tài khoản'};
+const TITLES={dashboard:'Dashboard',allpages:'Tất Cả Trang',health:'Sức khỏe Page',staff:'Quản lý Nhân sự',notes:'Ghi chú',manual:'Nhập liệu thủ công',attendance:'Chấm Công',api:'Kết nối API Facebook',accounts:'Quản lý Tài khoản'};
 window.go=function(p,el){
   document.querySelectorAll('.panel').forEach(d=>d.classList.remove('on'));
   document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('on'));
@@ -839,6 +908,7 @@ window.go=function(p,el){
   else document.querySelectorAll('.sb-item').forEach(n=>{if((n.getAttribute('onclick')||'').includes("'"+p+"'"))n.classList.add('on');});
   document.getElementById('pg-t').textContent=TITLES[p]||'Q2T MEDIA';
   setTimeout(initCharts,80);
+  if(p==='attendance')setTimeout(renderAttendance,100);
 };
 window.setPd=function(p,el){document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));el.classList.add('on');toast('Xem: '+p);};
 
@@ -1737,6 +1807,192 @@ window.setLang=function(lang){
   document.getElementById('lang-en').style.background=lang==='en'?'var(--brand2)':'transparent';
   document.getElementById('lang-en').style.color=lang==='en'?'#fff':'var(--t2)';
   toast(lang==='vi'?'Đã chuyển sang Tiếng Việt':'Switched to English');
+};
+
+// ── CHẤM CÔNG ──
+let ATT_DATA = {}; // {month_year: {staffId: {day: {sang: '', chieu: ''}}}}
+
+function getAttKey(){
+  const m=document.getElementById('att-month')?.value||'5';
+  const y=document.getElementById('att-year')?.value||'2026';
+  return `att_${y}_${m}`;
+}
+
+function getDaysInMonth(month,year){
+  return new Date(year,month,0).getDate();
+}
+
+function getDayName(day,month,year){
+  const d=new Date(year,month-1,day);
+  const names=['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+  return names[d.getDay()];
+}
+
+function calcCong(staffId,key){
+  const data=ATT_DATA[key]?.[staffId]||{};
+  let x=0,xx=0;
+  Object.values(data).forEach(day=>{
+    if(day.sang==='x')x++;
+    if(day.sang==='xx')xx++;
+    if(day.chieu==='x')x++;
+    if(day.chieu==='xx')xx++;
+  });
+  // Công thức đúng: =COUNTIF(x)/2 + COUNTIF(xx)
+  // x = nửa công bình thường
+  // xx = nửa công ngày lễ (tính x2 lương → đếm riêng để nhân lương sau)
+  return parseFloat((x/2+xx).toFixed(1));
+}
+
+// Tính riêng công ngày lễ để hiển thị
+function calcCongLe(staffId,key){
+  const data=ATT_DATA[key]?.[staffId]||{};
+  let xx=0;
+  Object.values(data).forEach(day=>{
+    if(day.sang==='xx')xx++;
+    if(day.chieu==='xx')xx++;
+  });
+  return parseFloat((xx/2).toFixed(1)); // số công ngày lễ
+}
+
+window.renderAttendance=async function(){
+  const key=getAttKey();
+  const m=parseInt(document.getElementById('att-month')?.value||5);
+  const y=parseInt(document.getElementById('att-year')?.value||2026);
+  const days=getDaysInMonth(m,y);
+
+  // Load data từ Firebase
+  try{
+    const snap=await db.collection('attendance').doc(key).get();
+    if(snap.exists)ATT_DATA[key]=snap.data();
+    else ATT_DATA[key]={};
+  }catch(e){ATT_DATA[key]={};}
+
+  const staffList=STAFF.length>0?STAFF:[{id:'default',name:'Nhân viên 1'}];
+
+  // Build header ngày
+  let dayHeaders='<th class="att-th-day">Ca</th>';
+  for(let d=1;d<=days;d++){
+    const dn=getDayName(d,m,y);
+    const cls=dn==='CN'?'att-th-cn':dn==='Thứ 7'?'att-th-t7':'';
+    dayHeaders+=`<th class="att-th-day ${cls}">${d}<br><span style="font-size:8px;font-weight:400">${dn.replace('Thứ ','T')}</span></th>`;
+  }
+  dayHeaders+='<th>Tổng</th>';
+
+  // Build rows
+  let rows='';
+  staffList.forEach((s,idx)=>{
+    const sid=s.id||s.name;
+    const sData=ATT_DATA[key]?.[sid]||{};
+    const cong=calcCong(sid,key);
+
+    // Hàng Sáng
+    let sangCells='';
+    for(let d=1;d<=days;d++){
+      const val=sData[d]?.sang||'';
+      const dn=getDayName(d,m,y);
+      const cnCls=dn==='CN'?'cn':'';
+      const vCls=val==='xx'?'xx-val':val==='x'?'x-val':'';
+      sangCells+=`<td class="att-cell ${cnCls} ${vCls}" onclick="toggleCell('${sid}',${d},'sang','${key}')"><span class="att-val ${val}">${val}</span></td>`;
+    }
+
+    // Hàng Chiều
+    let chieuCells='';
+    for(let d=1;d<=days;d++){
+      const val=sData[d]?.chieu||'';
+      const dn=getDayName(d,m,y);
+      const cnCls=dn==='CN'?'cn':'';
+      const vCls=val==='xx'?'xx-val':val==='x'?'x-val':'';
+      chieuCells+=`<td class="att-cell ${cnCls} ${vCls}" onclick="toggleCell('${sid}',${d},'chieu','${key}')"><span class="att-val ${val}">${val}</span></td>`;
+    }
+
+    rows+=`
+    <tr>
+      <td class="att-stt" rowspan="2">${idx+1}</td>
+      <td class="att-name" rowspan="2">${s.name}</td>
+      <td class="att-ca">Sáng</td>
+      ${sangCells}
+      <td class="att-total" rowspan="2">${cong}</td>
+    </tr>
+    <tr>
+      <td class="att-ca">Chiều</td>
+      ${chieuCells}
+    </tr>`;
+  });
+
+  const wrap=document.getElementById('att-table-wrap');
+  if(wrap)wrap.innerHTML=`
+    <table class="att-table">
+      <thead>
+        <tr>
+          <th style="min-width:36px">STT</th>
+          <th style="min-width:140px;text-align:left">Họ và Tên</th>
+          ${dayHeaders}
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  renderAttSummary(key,staffList);
+};
+
+window.toggleCell=function(staffId,day,ca,key){
+  if(!ATT_DATA[key])ATT_DATA[key]={};
+  if(!ATT_DATA[key][staffId])ATT_DATA[key][staffId]={};
+  if(!ATT_DATA[key][staffId][day])ATT_DATA[key][staffId][day]={sang:'',chieu:''};
+  const cur=ATT_DATA[key][staffId][day][ca]||'';
+  const next=cur===''?'x':cur==='x'?'xx':'';
+  ATT_DATA[key][staffId][day][ca]=next;
+  renderAttendance();
+};
+
+window.saveAttendance=async function(){
+  const key=getAttKey();
+  try{
+    await db.collection('attendance').doc(key).set(ATT_DATA[key]||{});
+    toast('Đã lưu bảng chấm công!');
+  }catch(e){toast('Lỗi lưu!','err');}
+};
+
+function renderAttSummary(key,staffList){
+  const tb=document.getElementById('att-summary');
+  if(!tb)return;
+  tb.innerHTML=staffList.map((s,i)=>{
+    const sid=s.id||s.name;
+    const cong=calcCong(sid,key);
+    const congLe=calcCongLe(sid,key);
+    const congThuong=parseFloat((cong-congLe).toFixed(1));
+    return`<tr>
+      <td style="text-align:center;color:var(--t3)">${i+1}</td>
+      <td style="font-weight:600">${s.name}</td>
+      <td style="font-weight:700;color:var(--grn);font-size:15px">${cong}</td>
+      <td style="color:var(--brand3)">${congThuong} công</td>
+      <td style="color:var(--ora);font-weight:600">${congLe > 0 ? congLe+' công × 2 lương' : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+window.exportAtt=function(){
+  const key=getAttKey();
+  const m=document.getElementById('att-month')?.value||'5';
+  const y=document.getElementById('att-year')?.value||'2026';
+  const days=getDaysInMonth(parseInt(m),parseInt(y));
+  let csv=`Q2T MEDIA - CHẤM CÔNG THÁNG ${m}/${y}\n`;
+  csv+=`Họ và Tên,Ca,${Array.from({length:days},(_,i)=>i+1).join(',')},Tổng\n`;
+  STAFF.forEach(s=>{
+    const sid=s.id||s.name;
+    const data=ATT_DATA[key]?.[sid]||{};
+    const sang=Array.from({length:days},(_,i)=>data[i+1]?.sang||'').join(',');
+    const chieu=Array.from({length:days},(_,i)=>data[i+1]?.chieu||'').join(',');
+    const cong=calcCong(sid,key);
+    csv+=`${s.name},Sáng,${sang},${cong}\n`;
+    csv+=`,Chiều,${chieu},\n`;
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`chamcong_${m}_${y}.csv`;
+  a.click();
+  toast('Đã xuất file CSV!');
 };
 
 // INIT
