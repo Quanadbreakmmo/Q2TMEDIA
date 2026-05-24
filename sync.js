@@ -24,13 +24,39 @@ function fmtNum(n) {
   return Math.round(n).toString();
 }
 
-// ── Đổi User Token → Page Token không hết hạn ──
-async function exchangeToPageTokens(userToken) {
-  const accounts = await fetchFB(
-    `https://graph.facebook.com/v20.0/me/accounts?fields=name,id,access_token&limit=200&access_token=${userToken}`
-  );
-  if (accounts.error || !accounts.data) return null;
-  return accounts.data; // Mỗi page có access_token riêng không hết hạn
+// Lấy doanh thu từ Facebook Monetization API
+async function getPageRevenue(pageId, pageToken) {
+  const rev = { content: 0, bonus: 0, total: 0 };
+  try {
+    // Lấy tổng doanh thu tháng
+    const now = new Date();
+    const since = new Date(now.getFullYear(), now.getMonth(), 1);
+    const sinceTs = Math.floor(since.getTime() / 1000);
+    const untilTs = Math.floor(now.getTime() / 1000);
+
+    // In-stream ads revenue
+    const instreamUrl = `https://graph.facebook.com/v20.0/${pageId}/insights?metric=page_video_view_time&period=month&since=${sinceTs}&until=${untilTs}&access_token=${pageToken}`;
+    const instream = await fetchFB(instreamUrl);
+    
+    // Monetization summary
+    const monUrl = `https://graph.facebook.com/v20.0/${pageId}?fields=is_eligible_for_monetization&access_token=${pageToken}`;
+    const mon = await fetchFB(monUrl);
+    
+    if (!mon.error) {
+      // Page có thể kiếm tiền - lấy earnings
+      const earningsUrl = `https://graph.facebook.com/v20.0/${pageId}/earnings?access_token=${pageToken}`;
+      const earnings = await fetchFB(earningsUrl);
+      if (!earnings.error && earnings.data) {
+        earnings.data.forEach(e => {
+          if (e.payment_type === 'content_monetization') rev.content += e.amount || 0;
+          else if (e.payment_type === 'bonus') rev.bonus += e.amount || 0;
+          else rev.content += e.amount || 0;
+        });
+        rev.total = rev.content + rev.bonus;
+      }
+    }
+  } catch(e) {}
+  return rev;
 }
 
 async function syncOnePage(pageId, pageName, pageToken, now) {
@@ -65,6 +91,9 @@ async function syncOnePage(pageId, pageName, pageToken, now) {
       }
     } catch(e) {}
 
+    // Doanh thu (chạy 1 lần/ngày)
+    const rev = await getPageRevenue(pageId, pageToken);
+
     // Tìm page trong Firebase
     let existingDoc = null;
     const byPid = await db.collection('pages').where('pid','==',pageId).limit(1).get();
@@ -90,6 +119,21 @@ async function syncOnePage(pageId, pageName, pageToken, now) {
       status: score < 40 ? 'error' : score < 70 ? 'warn' : 'active',
       last_sync: now, auto_synced: true
     };
+
+    // Thêm doanh thu nếu có
+    if (rev.total > 0) {
+      update.rev_in = '$' + rev.content.toFixed(2);
+      update.rev_re = '$0.00';
+      update.rev_st = '$0.00';
+      update.rev_su = '$0.00';
+      update.bonus_perf = '$' + rev.bonus.toFixed(2);
+      update.bonus_creator = '$0.00';
+      update.bonus_milestone = '$0.00';
+      update.bonus_other = '$0.00';
+      update.rev_total = '$' + rev.total.toFixed(2);
+      update.rev_updated = now;
+      console.log(`  💰 Doanh thu: $${rev.total.toFixed(2)} (Content: $${rev.content.toFixed(2)}, Bonus: $${rev.bonus.toFixed(2)})`);
+    }
 
     if (existingDoc) {
       await db.collection('pages').doc(existingDoc.id).update(update);
@@ -121,48 +165,44 @@ async function main() {
     console.log(`\n🔄 Token: ${t.name||t.id}`);
 
     try {
-      // Thử lấy danh sách page (User Token)
-      const pages = await exchangeToPageTokens(t.token);
+      // Lấy danh sách page từ User Token
+      const accounts = await fetchFB(
+        `https://graph.facebook.com/v20.0/me/accounts?fields=name,id,access_token&limit=200&access_token=${t.token}`
+      );
 
-      if (pages && pages.length > 0) {
-        console.log(`  📑 ${pages.length} page`);
-
-        for (const p of pages) {
-          // Dùng Page Token riêng — KHÔNG HẾT HẠN!
+      if (!accounts.error && accounts.data && accounts.data.length > 0) {
+        console.log(`  📑 ${accounts.data.length} page`);
+        for (const p of accounts.data) {
           const pageToken = p.access_token || t.token;
           const ok = await syncOnePage(p.id, p.name, pageToken, now);
           if (ok) synced++; else errors++;
 
-          // Lưu Page Token vào Firebase để dùng sau
+          // Lưu Page Token vào Firebase
           const existTok = await db.collection('tokens').where('page_id','==',p.id).limit(1).get();
           if (existTok.empty) {
             await db.collection('tokens').add({
               name: p.name, page_id: p.id,
-              token: p.access_token, // Page Token không hết hạn
+              token: p.access_token,
               status: 'ok', type: 'page'
             });
           } else {
-            // Cập nhật page token mới
             await db.collection('tokens').doc(existTok.docs[0].id).update({
               token: p.access_token, status: 'ok', last_sync: now
             });
           }
         }
-
-        await db.collection('tokens').doc(t.id).update({
-          status: 'ok', last_sync: now, pages_count: pages.length
-        });
-
+        await db.collection('tokens').doc(t.id).update({ status:'ok', last_sync:now, pages_count:accounts.data.length });
       } else if (t.page_id) {
-        // Page Token trực tiếp
         const ok = await syncOnePage(t.page_id, t.name||'Page', t.token, now);
         if (ok) { synced++; await db.collection('tokens').doc(t.id).update({ status:'ok', last_sync:now }); }
         else { errors++; await db.collection('tokens').doc(t.id).update({ status:'err' }); }
+      } else {
+        console.log(`  ⚠️ Token hợp lệ nhưng không có page`);
+        await db.collection('tokens').doc(t.id).update({ status:'ok' });
       }
-
     } catch(e) {
-      console.log(`❌ Lỗi: ${e.message}`);
-      await db.collection('tokens').doc(t.id).update({ status: 'err' });
+      console.log(`❌ ${e.message}`);
+      await db.collection('tokens').doc(t.id).update({ status:'err' });
       errors++;
     }
   }
@@ -170,7 +210,7 @@ async function main() {
   await db.collection('settings').doc('sync').set({
     last_sync: now,
     last_sync_iso: new Date().toISOString(),
-    synced: synced, errors: errors
+    synced, errors
   });
 
   console.log(`\n✅ Xong! ${synced} page ✓, ${errors} lỗi`);
