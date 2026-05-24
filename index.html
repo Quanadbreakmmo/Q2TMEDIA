@@ -814,7 +814,7 @@ let PAGES=[],STAFF=[],USERS=[],NOTES=[],TOKENS=[],CUR=null,syncTimer=null;
 
 // REALTIME — không seed lại dữ liệu đã có
 onSnapshot(pCol,s=>{PAGES=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();document.getElementById('db-st').textContent='Firebase ✓ Realtime';});
-onSnapshot(stCol,s=>{STAFF=s.docs.map(d=>({id:d.id,...d.data()}));renderStaff(STAFF);updBadges();});
+onSnapshot(stCol,s=>{STAFF=s.docs.map(d=>({id:d.id,...d.data()}));renderStaff(STAFF);updBadges();renderAPTable(PAGES);});
 onSnapshot(uCol,s=>{USERS=s.docs.map(d=>({id:d.id,...d.data()}));renderUTbl();if(s.empty)addDoc(uCol,{username:'admin',password:'q2t2024',fullname:'Admin Q2T',role:'admin'});});
 onSnapshot(nCol,s=>{NOTES=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.ts||0)-(a.ts||0));renderNotes();updBadges();});
 onSnapshot(tCol,s=>{TOKENS=s.docs.map(d=>({id:d.id,...d.data()}));renderToks();});
@@ -1039,7 +1039,10 @@ function renderAPTable(list){
   const tb=document.getElementById('ap-tbl');
   if(!tb)return;
   tb.innerHTML=list.map(p=>{
-    const staffOpts=STAFF.map(s=>`<option value="${s.name}" ${p.mgr===s.name?'selected':''}>${s.name}</option>`).join('');
+    // STAFF = nhân sự quản lý page (từ mục Quản lý Nhân Sự)
+    const staffOpts=STAFF.length>0
+      ? STAFF.map(s=>`<option value="${s.name}" ${p.mgr===s.name?'selected':''}>${s.name}</option>`).join('')
+      : '<option disabled>Chưa có nhân sự — vào mục Nhân Sự để thêm</option>';
     return`<tr>
       <td><div class="pr"><div class="pt">${p.emoji||'📄'}</div><div><div class="pname">${p.name}</div><div class="pcat">${p.cat}</div></div></div></td>
       <td style="font-weight:600;color:var(--brand3)">${p.followers||'—'}</td>
