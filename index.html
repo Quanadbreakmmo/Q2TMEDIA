@@ -351,14 +351,18 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
               </div>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:14px">
-              <div style="font-size:10px;color:var(--brand3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:5px"><i class="ti ti-device-tv"></i>Content Monetization</div>
-              <div style="font-size:26px;font-weight:700;color:var(--brand3)" id="d-content-rev">$0.00</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px">
+            <div style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:12px;text-align:center">
+              <div style="font-size:9px;color:var(--brand3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px">Content Mon.</div>
+              <div style="font-size:20px;font-weight:700;color:var(--brand3)" id="d-content-rev">$0.00</div>
             </div>
-            <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:10px;padding:14px">
-              <div style="font-size:10px;color:var(--ora);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:5px"><i class="ti ti-gift"></i>Bonus</div>
-              <div style="font-size:26px;font-weight:700;color:var(--ora)" id="d-bonus-rev">$0.00</div>
+            <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:10px;padding:12px;text-align:center">
+              <div style="font-size:9px;color:var(--ora);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px">Bonus</div>
+              <div style="font-size:20px;font-weight:700;color:var(--ora)" id="d-bonus-rev">$0.00</div>
+            </div>
+            <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:12px;text-align:center">
+              <div style="font-size:9px;color:var(--grn);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px">Tổng Tháng</div>
+              <div style="font-size:20px;font-weight:700;color:var(--grn)" id="d-rev-sub">$0.00</div>
             </div>
           </div>
         </div>
@@ -805,6 +809,12 @@ seedOnce();
 function startSync(){
   if(syncTimer)clearInterval(syncTimer);
   syncTimer=setInterval(()=>syncAll(),5*60*1000);
+  // Auto refresh dữ liệu Firebase mỗi 30 giây
+  setInterval(()=>{
+    updCounters();
+    renderTop();
+    updateRevDisplay();
+  },30*1000);
   // Lắng nghe thay đổi từ Firebase settings/sync
   try{
     onSnapshot(doc(db,'settings','sync'),snap=>{
@@ -937,10 +947,15 @@ function renderTop(){
   document.getElementById('ap-fol').textContent=tf>0?fmtNum(tf):'—';
   let tr=0;PAGES.forEach(p=>{tr+=parseNum(p.reach);});
   document.getElementById('ap-reach').textContent=tr>0?fmtNum(tr):'—';
-  // Real On - tổng reach realtime (lấy từ page có last_sync gần nhất)
-  const recentPages=PAGES.filter(p=>p.auto_synced&&p.reach&&p.reach!=='—');
-  let realOn=0;recentPages.forEach(p=>{realOn+=parseNum(p.reach);});
-  document.getElementById('ap-real-on').textContent=realOn>0?fmtNum(realOn):'—';
+  // Real On - tổng reach từ tất cả page đã sync API
+  const syncedPages=PAGES.filter(p=>p.auto_synced&&p.reach&&p.reach!=='—');
+  let realOn=0;syncedPages.forEach(p=>{realOn+=parseNum(p.reach);});
+  const realOnEl=document.getElementById('ap-real-on');
+  if(realOnEl)realOnEl.textContent=realOn>0?fmtNum(realOn):'Chờ sync';
+  // Reach tổng
+  let totalReach=0;PAGES.forEach(p=>{totalReach+=parseNum(p.reach);});
+  const apReach=document.getElementById('ap-reach');
+  if(apReach)apReach.textContent=totalReach>0?fmtNum(totalReach):'—';
   // Cập nhật sync time
   const latest=PAGES.filter(p=>p.last_sync).sort((a,b)=>b.last_sync>a.last_sync?1:-1)[0];
   if(latest){
@@ -1279,6 +1294,11 @@ function updateRevDisplay(){
   const drev=document.getElementById('d-rev');if(drev)drev.textContent=fmt(grandTotal);
   const dcr=document.getElementById('d-content-rev');if(dcr)dcr.textContent=fmt(contentTotal);
   const dbr=document.getElementById('d-bonus-rev');if(dbr)dbr.textContent=fmt(bonusTotal);
+  const drs=document.getElementById('d-rev-sub');if(drs)drs.textContent=fmt(grandTotal);
+  // Update revenue panel cards
+  const rct=document.getElementById('rv-content-total');if(rct)rct.textContent=fmt(contentTotal);
+  const rbt=document.getElementById('rv-bonus-total');if(rbt)rbt.textContent=fmt(bonusTotal);
+  const rgt=document.getElementById('rv-grand-total');if(rgt)rgt.textContent=fmt(grandTotal);
 
   // Update last sync time
   const lu=document.getElementById('rv-last-update');
