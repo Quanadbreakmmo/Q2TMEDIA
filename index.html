@@ -1952,6 +1952,13 @@ window.renderAttendance=async function(){
     </table>`;
 
   renderAttSummary(key,staffList);
+  // Gắn event cho tất cả nút xoá
+  document.querySelectorAll('.att-del-btn').forEach(btn=>{
+    btn.onclick=function(){
+      const name=this.getAttribute('data-name');
+      if(name)removeAttStaff(name);
+    };
+  });
 };
 
 let attSaveTimer=null;
