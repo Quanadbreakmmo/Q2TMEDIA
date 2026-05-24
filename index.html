@@ -922,7 +922,7 @@ window.go=function(p,el){
 window.setPd=function(p,el){document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));el.classList.add('on');toast('Xem: '+p);};
 
 // RENDER ALL
-function renderAll(){renderTop();renderHGrid(PAGES);renderRevTbl();updCounters();updBadges();updNotePageSel();checkAlerts();updManualPageSels();renderManualSummary();updateRevDisplay();}
+function renderAll(){renderTop();renderHGrid(PAGES);renderRevTbl();updCounters();updBadges();updNotePageSel();checkAlerts();updManualPageSels();renderManualSummary();updateRevDisplay();if(!window._apSelecting)renderAPTable(PAGES);}
 
 function updCounters(){
   const setEl=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
@@ -1036,6 +1036,8 @@ function renderTop(){
 }
 
 function renderAPTable(list){
+  // Không re-render khi đang chọn nhân sự
+  if(window._apSelecting)return;
   const tb=document.getElementById('ap-tbl');
   if(!tb)return;
   tb.innerHTML=list.map(p=>{
@@ -1049,8 +1051,13 @@ function renderAPTable(list){
       <td style="color:var(--sky)">${p.reach||'—'}</td>
       <td style="color:var(--grn);font-weight:600">${p.auto_synced&&p.reach&&p.reach!=='—'?'<span class="sb-dot" style="width:5px;height:5px;margin-right:4px"></span>'+p.reach:'—'}</td>
       <td>${getTrHtml(p.fol_change)}</td>
-      <td>
-        <select class="fs" style="width:140px;padding:5px 8px;font-size:11.5px;background:var(--s3);border-color:var(--bdr2)" onchange="assignStaff('${p.id}',this.value)" onclick="event.stopPropagation()">
+      <td onclick="event.stopPropagation()">
+        <select class="fs" style="width:150px;padding:5px 8px;font-size:11.5px;background:var(--s3);border-color:var(--bdr2)"
+          onmousedown="event.stopPropagation()"
+          onclick="event.stopPropagation()"
+          onfocus="window._apSelecting=true"
+          onblur="setTimeout(()=>{window._apSelecting=false},500)"
+          onchange="assignStaff('${p.id}',this.value);window._apSelecting=false">
           <option value="">— Chưa phân công —</option>
           ${staffOpts}
         </select>
