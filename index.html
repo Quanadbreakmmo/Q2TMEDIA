@@ -803,7 +803,7 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getFirestore,collection,doc,addDoc,setDoc,deleteDoc,onSnapshot,getDocs,query,limit}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import{getFirestore,collection,doc,addDoc,setDoc,deleteDoc,onSnapshot,getDocs,getDoc,query,limit}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const FBC={apiKey:"AIzaSyA2fY4cJ9xGVa0MMJXBSHqfTpeG49Kd8M0",authDomain:"q2t-media.firebaseapp.com",projectId:"q2t-media",storageBucket:"q2t-media.firebasestorage.app",messagingSenderId:"832782669130",appId:"1:832782669130:web:68403817d01ddee1edddb3"};
 const fbApp=initializeApp(FBC);
@@ -1382,9 +1382,7 @@ function updateRevDisplay(){
   // Update last sync time
   const lu=document.getElementById('rv-last-update');
   if(lu){
-    db.collection('settings').doc('sync').get().then(doc=>{
-      if(doc.exists)lu.textContent=doc.data().last_sync||'Chưa sync';
-    }).catch(()=>{});
+    getDoc(doc(db,'settings','sync')).then(d=>{if(d.exists())lu.textContent=d.data().last_sync||'Chưa sync';}).catch(()=>{});
   }
 }
 window.addTok=async function(){await addDoc(tCol,{name:'Đang nhận diện...',page_id:'',token:'',status:'pend'});};
@@ -1875,12 +1873,12 @@ window.renderAttendance=async function(){
   // Load data từ Firebase
   try{
     const [snap,extraSnap]=await Promise.all([
-      db.collection('attendance').doc(key).get(),
-      db.collection('attendance').doc(key+'_extra').get()
+      getDoc(doc(db,'attendance',key)),
+      getDoc(doc(db,'attendance',key+'_extra'))
     ]);
-    if(snap.exists)ATT_DATA[key]=snap.data();
+    if(snap.exists())ATT_DATA[key]=snap.data();
     else ATT_DATA[key]={};
-    ATT_EXTRA_STAFF=extraSnap.exists?(extraSnap.data().staff||[]):[];
+    ATT_EXTRA_STAFF=extraSnap.exists()?(extraSnap.data().staff||[]):[];
   }catch(e){ATT_DATA[key]={};}
 
   // Danh sách nhân sự chấm công = CHỈ từ ATT_EXTRA_STAFF (độc lập hoàn toàn)
@@ -1977,7 +1975,7 @@ window.toggleCell=function(staffId,day,ca,key){
   clearTimeout(attSaveTimer);
   attSaveTimer=setTimeout(async()=>{
     try{
-      await db.collection('attendance').doc(key).set(ATT_DATA[key]||{});
+      await setDoc(doc(db,'attendance',key),ATT_DATA[key]||{});
       // Hiện icon lưu nhỏ
       const saveBtn=document.querySelector('[onclick="saveAttendance()"]');
       if(saveBtn){
@@ -2005,7 +2003,7 @@ function updateAttTotals(staffId,key){
 window.saveAttendance=async function(){
   const key=getAttKey();
   try{
-    await db.collection('attendance').doc(key).set(ATT_DATA[key]||{});
+    await setDoc(doc(db,'attendance',key),ATT_DATA[key]||{});
     toast('Đã lưu bảng chấm công!');
   }catch(e){toast('Lỗi lưu!','err');}
 };
@@ -2035,8 +2033,8 @@ window.openAddAttStaff=async function(){
   // Đảm bảo load data trước khi thêm
   const key=getAttKey();
   try{
-    const extraSnap=await db.collection('attendance').doc(key+'_extra').get();
-    ATT_EXTRA_STAFF=extraSnap.exists?(extraSnap.data().staff||[]):[];
+    const extraSnap=await getDoc(doc(db,'attendance',key+'_extra'));
+    ATT_EXTRA_STAFF=extraSnap.exists()?(extraSnap.data().staff||[]):[];
   }catch(e){}
   document.getElementById('att-staff-name').value='';
   sm('m-att-staff');
@@ -2048,13 +2046,13 @@ window.saveAttStaff=async function(){
   const key=getAttKey();
   // Load lại từ Firebase trước
   try{
-    const snap=await db.collection('attendance').doc(key+'_extra').get();
-    ATT_EXTRA_STAFF=snap.exists?(snap.data().staff||[]):[];
+    const snap=await getDoc(doc(db,'attendance',key+'_extra'));
+    ATT_EXTRA_STAFF=snap.exists()?(snap.data().staff||[]):[];
   }catch(e){ATT_EXTRA_STAFF=[];}
   if(ATT_EXTRA_STAFF.includes(name)){toast('Tên này đã có trong bảng!','err');return;}
   ATT_EXTRA_STAFF.push(name);
   try{
-    await db.collection('attendance').doc(key+'_extra').set({staff:[...ATT_EXTRA_STAFF]});
+    await setDoc(doc(db,'attendance',key+'_extra'),{staff:[...ATT_EXTRA_STAFF]});
     cm('m-att-staff');
     toast('Đã thêm '+name+'!');
     await renderAttendance();
@@ -2070,14 +2068,14 @@ window.delAttIdx=async function(idx){
   const key=getAttKey();
   // Load lại từ Firebase để đảm bảo đúng
   try{
-    const snap=await db.collection('attendance').doc(key+'_extra').get();
-    ATT_EXTRA_STAFF=snap.exists?(snap.data().staff||[]):[];
+    const snap=await getDoc(doc(db,'attendance',key+'_extra'));
+    ATT_EXTRA_STAFF=snap.exists()?(snap.data().staff||[]):[];
   }catch(e){}
   if(idx<0||idx>=ATT_EXTRA_STAFF.length){toast('Lỗi index!','err');return;}
   const name=ATT_EXTRA_STAFF[idx];
   ATT_EXTRA_STAFF.splice(idx,1);
   try{
-    await db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF});
+    await setDoc(doc(db,'attendance',key+'_extra'),{staff:ATT_EXTRA_STAFF});
     toast('Đã xoá '+name+'!');
   }catch(e){toast('Lỗi!','err');}
   await renderAttendance();
@@ -2098,8 +2096,8 @@ window.editAttIdx=async function(idx){
   }
   try{
     await Promise.all([
-      db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF}),
-      db.collection('attendance').doc(key).set(ATT_DATA[key]||{})
+      setDoc(doc(db,'attendance',key+'_extra'),{staff:ATT_EXTRA_STAFF}),
+      setDoc(doc(db,'attendance',key),ATT_DATA[key]||{})
     ]);
     toast('Đã đổi tên thành: '+newName.trim());
   }catch(e){toast('Lỗi!','err');}
@@ -2110,7 +2108,7 @@ window.delAttStaff=async function(name){
   const key=getAttKey();
   ATT_EXTRA_STAFF=ATT_EXTRA_STAFF.filter(n=>n!==name);
   try{
-    await db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF});
+    await setDoc(doc(db,'attendance',key+'_extra'),{staff:ATT_EXTRA_STAFF});
     toast('Đã xoá '+name+'!');
   }catch(e){}
   await renderAttendance();
@@ -2134,8 +2132,8 @@ window.renameAttStaff=async function(oldName,newName){
   }
   try{
     await Promise.all([
-      db.collection('attendance').doc(key).set(ATT_DATA[key]||{}),
-      db.collection('attendance').doc(key+'_extra').set({staff:ATT_EXTRA_STAFF})
+      setDoc(doc(db,'attendance',key),ATT_DATA[key]||{}),
+      setDoc(doc(db,'attendance',key+'_extra'),{staff:ATT_EXTRA_STAFF})
     ]);
     toast('Đã đổi tên thành: '+newName);
   }catch(e){toast('Lỗi lưu!','err');}
