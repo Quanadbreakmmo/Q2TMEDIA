@@ -259,23 +259,26 @@ tbody td{padding:10px 12px;vertical-align:middle;font-size:12.5px}
 
 /* ATTENDANCE */
 .att-table{border-collapse:collapse;min-width:100%}
-.att-table th{padding:6px 8px;text-align:center;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border:1px solid var(--bdr2);background:var(--s2);white-space:nowrap;font-weight:600}
-.att-table td{padding:0;border:1px solid var(--bdr2);text-align:center;vertical-align:middle}
-.att-name{padding:8px 12px;text-align:left;font-size:12.5px;font-weight:600;white-space:nowrap;background:var(--s2);min-width:140px}
-.att-ca{padding:4px 8px;font-size:10px;color:var(--t3);background:var(--s2);white-space:nowrap}
-.att-stt{padding:6px 8px;font-size:12px;color:var(--t3);background:var(--s2);text-align:center}
-.att-cell{width:36px;height:28px;cursor:pointer;transition:all .12s;position:relative}
-.att-cell:hover{background:rgba(37,99,235,0.1)}
-.att-cell.x-val{background:rgba(37,99,235,0.15)}
-.att-cell.xx-val{background:rgba(34,197,94,0.15)}
-.att-cell.cn{background:rgba(239,68,68,0.05)}
-.att-val{font-size:11px;font-weight:700;line-height:28px}
-.att-val.x{color:var(--brand3)}
-.att-val.xx{color:var(--grn)}
-.att-total{padding:6px 10px;font-size:13px;font-weight:700;color:var(--grn);background:rgba(34,197,94,0.08);white-space:nowrap}
-.att-th-day{min-width:36px;font-size:10px}
-.att-th-cn{color:var(--red)!important}
-.att-th-t7{color:var(--ora)!important}
+.att-table th{padding:5px 6px;text-align:center;color:#4B5563;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;border:1px solid #E5E7EB;background:#F9FAFB;white-space:nowrap;font-weight:700}
+.att-table td{padding:0;border:1px solid #E5E7EB;text-align:center;vertical-align:middle}
+.att-name{padding:0 10px;text-align:left;font-size:12px;font-weight:600;white-space:nowrap;background:#F3F4F6;min-width:140px;color:#111827;height:22px;line-height:22px}
+.att-ca{padding:0 8px;font-size:10px;color:#6B7280;background:#F9FAFB;white-space:nowrap;height:22px;line-height:22px}
+.att-stt{padding:0 8px;font-size:12px;color:#6B7280;background:#F3F4F6;text-align:center;height:44px;vertical-align:middle}
+.att-cell{width:34px;height:22px;cursor:pointer;transition:all .1s;position:relative}
+.att-cell:hover{background:#DBEAFE}
+.att-cell.x-val{background:#EFF6FF}
+.att-cell.xx-val{background:#F0FDF4}
+.att-cell.cn{background:#FEF2F2}
+.att-cell.t7{background:#FFF7ED}
+.att-val{font-size:11px;font-weight:700;line-height:22px;display:block}
+.att-val.x{color:#2563EB}
+.att-val.xx{color:#16A34A}
+.att-total{padding:0 10px;font-size:13px;font-weight:700;color:#16A34A;background:#F0FDF4;white-space:nowrap;height:44px;vertical-align:middle;border-left:2px solid #86EFAC}
+.att-th-day{min-width:34px;font-size:9.5px}
+.att-th-cn{color:#DC2626!important;background:#FEF2F2!important}
+.att-th-t7{color:#D97706!important;background:#FFF7ED!important}
+.att-row-odd{background:#FFFFFF}
+.att-row-even{background:#F9FAFB}
 
 /* TOAST */
 .toast{position:fixed;top:60px;right:16px;background:var(--s1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:10px 14px;font-size:12.5px;z-index:9000;display:none;align-items:center;gap:8px;max-width:300px;box-shadow:0 6px 20px rgba(0,0,0,.5)}
@@ -1904,7 +1907,7 @@ window.renderAttendance=async function(){
     for(let d=1;d<=days;d++){
       const val=sData[d]?.sang||'';
       const dn=getDayName(d,m,y);
-      const cnCls=dn==='CN'?'cn':'';
+      const cnCls=dn==='CN'?'cn':dn==='Thứ 7'?'t7':'';
       const vCls=val==='xx'?'xx-val':val==='x'?'x-val':'';
       sangCells+=`<td class="att-cell ${cnCls} ${vCls}" onclick="toggleCell('${sid}',${d},'sang','${key}')"><span class="att-val ${val}">${val}</span></td>`;
     }
@@ -1914,7 +1917,7 @@ window.renderAttendance=async function(){
     for(let d=1;d<=days;d++){
       const val=sData[d]?.chieu||'';
       const dn=getDayName(d,m,y);
-      const cnCls=dn==='CN'?'cn':'';
+      const cnCls=dn==='CN'?'cn':dn==='Thứ 7'?'t7':'';
       const vCls=val==='xx'?'xx-val':val==='x'?'x-val':'';
       chieuCells+=`<td class="att-cell ${cnCls} ${vCls}" onclick="toggleCell('${sid}',${d},'chieu','${key}')"><span class="att-val ${val}">${val}</span></td>`;
     }
@@ -1962,7 +1965,8 @@ window.toggleCell=function(staffId,day,ca,key){
   ATT_DATA[key][staffId][day][ca]=next;
   // Cập nhật UI trực tiếp
   const cell=event.currentTarget;
-  cell.className=`att-cell ${next==='xx'?'xx-val':next==='x'?'x-val':''} ${cell.className.includes('cn')?'cn':''}`;
+  const isCn=cell.className.includes('cn');const isT7=cell.className.includes('t7');
+  cell.className=`att-cell ${next==='xx'?'xx-val':next==='x'?'x-val':''} ${isCn?'cn':isT7?'t7':''}`;
   cell.querySelector('.att-val').className=`att-val ${next}`;
   cell.querySelector('.att-val').textContent=next;
   // Cập nhật tổng công
