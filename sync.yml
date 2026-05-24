@@ -2,9 +2,7 @@ name: Q2T Media — Sync Facebook Data
 
 on:
   schedule:
-    # Sync followers/reach mỗi 5 phút
     - cron: '*/5 * * * *'
-    # Sync doanh thu lúc 7:00 sáng giờ VN (00:00 UTC)
     - cron: '0 0 * * *'
   workflow_dispatch:
 
@@ -18,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install dependencies
         run: npm install
