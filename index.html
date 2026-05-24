@@ -1047,7 +1047,7 @@ function renderAPTable(list){
       <td style="color:var(--grn);font-weight:600">${p.auto_synced&&p.reach&&p.reach!=='—'?'<span class="sb-dot" style="width:5px;height:5px;margin-right:4px"></span>'+p.reach:'—'}</td>
       <td>${getTrHtml(p.fol_change)}</td>
       <td>
-        <select class="fs" style="width:140px;padding:5px 8px;font-size:11.5px;background:var(--s3);border-color:var(--bdr2)" onchange="assignStaff('${p.id}',this.value)">
+        <select class="fs" style="width:140px;padding:5px 8px;font-size:11.5px;background:var(--s3);border-color:var(--bdr2)" onchange="assignStaff('${p.id}',this.value)" onclick="event.stopPropagation()">
           <option value="">— Chưa phân công —</option>
           ${staffOpts}
         </select>
@@ -1067,8 +1067,10 @@ window.searchAP=function(q){renderAPTable(q?PAGES.filter(p=>p.name.toLowerCase()
 window.assignStaff=async function(pid,staffName){
   const p=PAGES.find(x=>x.id===pid);
   if(!p)return;
-  await setDoc(doc(db,'pages',pid),{...p,mgr:staffName});
-  toast(staffName?'Đã phân công: '+staffName:'Đã bỏ phân công!');
+  try{
+    await setDoc(doc(db,'pages',pid),{...p,mgr:staffName});
+    toast(staffName?'✓ Phân công: '+staffName:'Đã bỏ phân công!');
+  }catch(e){toast('Lỗi lưu!','err');}
 };
 window.searchAP=function(q){renderAPTable(q?PAGES.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())):PAGES);};
 
@@ -1923,9 +1925,14 @@ window.renderAttendance=async function(){
     rows+=`
     <tr>
       <td class="att-stt" rowspan="2">${idx+1}</td>
-      <td class="att-name" rowspan="2" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 10px">
-        <span>${s.name}</span>
-        <button onclick="removeAttStaff('${sid}')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red);border-radius:5px;padding:2px 6px;cursor:pointer;font-size:10px;white-space:nowrap" title="Xoá khỏi bảng chấm công"><i class="ti ti-x"></i></button>
+      <td class="att-name" rowspan="2" style="height:44px;vertical-align:middle;padding:0 8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
+          <span style="flex:1;font-size:12px;font-weight:600">${s.name}</span>
+          <div style="display:flex;gap:3px;flex-shrink:0">
+            <button onclick="editAttIdx(${idx})" style="background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);color:var(--brand3);border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px"><i class="ti ti-edit"></i></button>
+            <button onclick="delAttIdx(${idx})" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red);border-radius:4px;padding:2px 5px;cursor:pointer;font-size:9px"><i class="ti ti-x"></i></button>
+          </div>
+        </div>
       </td>
       <td class="att-ca">Sáng</td>
       ${sangCells}
