@@ -110,6 +110,7 @@ async function main() {
 
           pageUpdates[p.id] = {
             name: p.name, pid: p.id,
+            _tokenId: t.id,
             followers: fmtNum(newFol), reach,
             fol_change: folChange,
             score: Math.round(score),
@@ -164,6 +165,20 @@ async function main() {
   }
 
   // Cập nhật settings sync (1 lần duy nhất)
+  // Cập nhật token cha với danh sách page đã sync
+  for (const t of userTokens) {
+    if (!t.id) continue;
+    const myPages = Object.values(pageUpdates).filter(p => p._tokenId === t.id);
+    if (myPages.length > 0) {
+      await db.collection('tokens').doc(t.id).update({
+        pages_count: myPages.length,
+        last_sync: now,
+        status: 'ok',
+        type: 'user'
+      });
+    }
+  }
+
   await db.collection('settings').doc('sync').set({
     last_sync: now,
     last_sync_iso: new Date().toISOString(),
