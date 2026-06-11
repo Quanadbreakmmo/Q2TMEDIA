@@ -1173,49 +1173,57 @@ function renderUTbl(){
 function renderToks(){
   const c=document.getElementById('token-list');
   if(!c)return;
-  if(TOKENS.length===0){c.innerHTML='<div style="font-size:12px;color:var(--t3);padding:6px 0">Chưa có token. Nhấn "Thêm token" để bắt đầu kết nối.</div>';return;}
-  // Chỉ hiện User Token (tài khoản cha)
   const userToks=TOKENS.filter(t=>t.type!=='page');
   if(userToks.length===0){
-    c.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">Chưa có tài khoản nào. Nhấn "+ Thêm tài khoản" để bắt đầu.</div>';
+    c.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">Chưa có tài khoản nào. Nhấn "+ Thêm tài khoản FB" để bắt đầu.</div>';
     return;
   }
   c.innerHTML=userToks.map(t=>{
-    // Lấy danh sách page con của tài khoản này
     const childPages=TOKENS.filter(x=>x.type==='page'&&x.parent_token===t.id);
-    const pageNames=childPages.map(x=>x.name).slice(0,5).join(', ')+(childPages.length>5?'...':'');
+    const expanded=window._tokExpanded&&window._tokExpanded[t.id];
     return`
-    <div style="background:var(--s2);border-radius:12px;border:1px solid ${t.token?'rgba(34,197,94,0.2)':'var(--bdr2)'};margin-bottom:10px;overflow:hidden">
-      <!-- Header tài khoản -->
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px">
-        <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--brand2),var(--brand));display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-brand-facebook" style="color:#fff;font-size:16px"></i>
+    <div style="background:var(--s2);border-radius:12px;border:1px solid ${t.token?'rgba(34,197,94,0.2)':'var(--bdr2)'};margin-bottom:8px;overflow:hidden">
+      <!-- Dòng tài khoản -->
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer" onclick="toggleTokExpand('${t.id}')">
+        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand2),var(--brand));display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-brand-facebook" style="color:#fff;font-size:15px"></i>
         </div>
         <div style="flex:1;min-width:0">
-          <input class="fi" value="${t.name||''}" placeholder="Tên tài khoản Facebook..." style="font-size:13px;font-weight:700;background:transparent;border:none;padding:0;color:var(--t1);width:100%" onchange="updTok('${t.id}','name',this.value)">
-          <div style="font-size:11px;color:${t.token?'var(--grn)':'var(--t3)'};margin-top:2px">
-            ${t.token?`<span>✓ Đã kết nối</span>`:'<span>Chưa có token</span>'}
-            ${childPages.length>0?`<span style="margin-left:8px;color:var(--brand3)">• ${childPages.length} page</span>`:''}
-            ${t.last_sync?`<span style="margin-left:8px;color:var(--t3)">• Sync: ${t.last_sync}</span>`:''}
+          <div style="font-size:13px;font-weight:700;color:var(--t1)">${t.name||'Tài khoản FB'}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:1px">
+            ${t.token?'<span style="color:var(--grn)">✓ Đã kết nối</span>':'<span>Chưa có token</span>'}
+            ${childPages.length>0?`<span style="margin-left:8px;color:var(--brand3)">${childPages.length} page</span>`:''}
           </div>
         </div>
-        <button onclick="removeAccount('${t.id}')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:5px">
-          <i class="ti ti-trash" style="font-size:12px"></i> Xoá tài khoản
+        <i class="ti ti-chevron-${expanded?'up':'down'}" style="color:var(--t3);font-size:14px;flex-shrink:0"></i>
+        <button onclick="event.stopPropagation();removeAccount('${t.id}')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;flex-shrink:0">
+          <i class="ti ti-trash" style="font-size:11px"></i>Xoá
         </button>
       </div>
-      <!-- Token input -->
-      <div style="padding:0 14px 12px">
-        <input class="fi" value="${t.token||''}" type="password" placeholder="Dán Access Token từ Graph Explorer..." style="font-size:12px;width:100%" onchange="updTok('${t.id}','token',this.value)">
+      <!-- Token input (luôn hiện) -->
+      <div style="padding:0 14px 10px;border-top:1px solid var(--bdr2)">
+        <input class="fi" value="${t.token||''}" type="password" placeholder="Dán Access Token..." style="font-size:12px;width:100%" onchange="updTok('${t.id}','token',this.value)">
+        <div style="font-size:10px;color:var(--t3);margin-top:4px">Tên hiển thị: <input class="fi" value="${t.name||''}" placeholder="Tên tài khoản..." style="font-size:11px;display:inline;width:160px;padding:2px 6px;margin-left:4px" onchange="updTok('${t.id}','name',this.value)"></div>
       </div>
-      <!-- Danh sách page thu gọn -->
-      ${childPages.length>0?`
-      <div style="padding:8px 14px;background:var(--s3);border-top:1px solid var(--bdr2);font-size:11px;color:var(--t3)">
-        <i class="ti ti-layout-grid" style="font-size:11px;margin-right:4px"></i>
-        ${pageNames||'Chưa có page'}
+      <!-- Danh sách page (ẩn/hiện) -->
+      ${expanded&&childPages.length>0?`
+      <div style="border-top:1px solid var(--bdr2);padding:8px 14px;background:var(--s3)">
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600">Page trong tài khoản này</div>
+        ${childPages.map(p=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:7px;margin-bottom:4px;background:var(--s2)">
+          <div>
+            <span style="font-size:12px;font-weight:600">${p.name}</span>
+            ${p.page_id?`<span style="font-size:10px;color:var(--t3);margin-left:6px">ID: ${p.page_id}</span>`:''}
+          </div>
+          <button onclick="cfDel('token','${p.id}','page ${p.name}')" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);color:var(--red);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:10px">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>`).join('')}
       </div>`:''}
     </div>`;
   }).join('');
 }
+
 
 // RENDER REV TABLE
 function renderRevTbl(){
@@ -1414,6 +1422,12 @@ function updateRevDisplay(){
   }
 }
 // Xoá tài khoản + toàn bộ page token con
+window.toggleTokExpand=function(id){
+  if(!window._tokExpanded)window._tokExpanded={};
+  window._tokExpanded[id]=!window._tokExpanded[id];
+  renderToks();
+};
+
 window.removeAccount=async function(tokenId){
   const t=TOKENS.find(x=>x.id===tokenId);
   if(!t)return;
