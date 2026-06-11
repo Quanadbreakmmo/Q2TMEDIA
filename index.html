@@ -1173,56 +1173,90 @@ function renderUTbl(){
 function renderToks(){
   const c=document.getElementById('token-list');
   if(!c)return;
-  const userToks=TOKENS.filter(t=>!t.type||t.type==='user');
-  if(userToks.length===0){
+  // User tokens = token không có page_id (token cha)
+  const userToks=TOKENS.filter(t=>!t.page_id&&t.token&&t.token.length>10);
+  // Page tokens = token có page_id
+  const pageToks=TOKENS.filter(t=>t.page_id&&t.token&&t.token.length>10);
+
+  if(userToks.length===0&&pageToks.length===0){
     c.innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0">Chưa có tài khoản nào. Nhấn "+ Thêm tài khoản FB" để bắt đầu.</div>';
     return;
   }
-  c.innerHTML=userToks.map(t=>{
-    const childPages=TOKENS.filter(x=>x.type==='page'&&(x.parent_token===t.id||(!x.parent_token&&x.page_id&&x.name===t.name)));
-    const expanded=window._tokExpanded&&window._tokExpanded[t.id];
-    return`
-    <div style="background:var(--s2);border-radius:12px;border:1px solid ${t.token?'rgba(34,197,94,0.2)':'var(--bdr2)'};margin-bottom:8px;overflow:hidden">
-      <!-- Dòng tài khoản -->
-      <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer" onclick="toggleTokExpand('${t.id}')">
-        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand2),var(--brand));display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-brand-facebook" style="color:#fff;font-size:15px"></i>
-        </div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;color:var(--t1)">${t.name||'Tài khoản FB'}</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:1px">
-            ${t.token?'<span style="color:var(--grn)">✓ Đã kết nối</span>':'<span>Chưa có token</span>'}
-            ${childPages.length>0?`<span style="margin-left:8px;color:var(--brand3)">${childPages.length} page</span>`:''}
+
+  // Nhóm page token theo tên tài khoản (name)
+  // Nếu không có user token → hiện page token trực tiếp
+  let html_out='';
+
+  if(userToks.length>0){
+    html_out=userToks.map(t=>{
+      // Page trong tài khoản này = page token có parent_token = t.id
+      // HOẶC page trong PAGES có token khớp
+      const myPageToks=pageToks.filter(p=>p.parent_token===t.id);
+      const expanded=window._tokExpanded&&window._tokExpanded[t.id];
+      return`
+      <div style="background:var(--s2);border-radius:12px;border:1px solid ${t.token?'rgba(34,197,94,0.2)':'var(--bdr2)'};margin-bottom:8px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer" onclick="toggleTokExpand('${t.id}')">
+          <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--brand2),var(--brand));display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-brand-facebook" style="color:#fff;font-size:15px"></i>
           </div>
-        </div>
-        <i class="ti ti-chevron-${expanded?'up':'down'}" style="color:var(--t3);font-size:14px;flex-shrink:0"></i>
-        <button onclick="event.stopPropagation();removeAccount('${t.id}')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;flex-shrink:0">
-          <i class="ti ti-trash" style="font-size:11px"></i>Xoá
-        </button>
-      </div>
-      <!-- Token input (luôn hiện) -->
-      <div style="padding:0 14px 10px;border-top:1px solid var(--bdr2)">
-        <input class="fi" value="${t.token||''}" type="password" placeholder="Dán Access Token..." style="font-size:12px;width:100%" onchange="updTok('${t.id}','token',this.value)">
-        <div style="font-size:10px;color:var(--t3);margin-top:4px">Tên hiển thị: <input class="fi" value="${t.name||''}" placeholder="Tên tài khoản..." style="font-size:11px;display:inline;width:160px;padding:2px 6px;margin-left:4px" onchange="updTok('${t.id}','name',this.value)"></div>
-      </div>
-      <!-- Danh sách page (ẩn/hiện) -->
-      ${expanded&&childPages.length>0?`
-      <div style="border-top:1px solid var(--bdr2);padding:8px 14px;background:var(--s3)">
-        <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600">Page trong tài khoản này</div>
-        ${childPages.map(p=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:7px;margin-bottom:4px;background:var(--s2)">
-          <div>
-            <span style="font-size:12px;font-weight:600">${p.name}</span>
-            ${p.page_id?`<span style="font-size:10px;color:var(--t3);margin-left:6px">ID: ${p.page_id}</span>`:''}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;color:var(--t1)">${t.name||'Tài khoản FB'}</div>
+            <div style="font-size:11px;margin-top:2px">
+              <span style="color:${t.token?'var(--grn)':'var(--t3)'}">✓ Đã kết nối</span>
+              ${t.pages_count?`<span style="margin-left:8px;color:var(--brand3)">${t.pages_count} page</span>`:''}
+              ${t.last_sync?`<span style="margin-left:8px;color:var(--t3)">• ${t.last_sync}</span>`:''}
+            </div>
           </div>
-          <button onclick="cfDel('token','${p.id}','page ${p.name}')" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);color:var(--red);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:10px">
-            <i class="ti ti-x"></i>
+          <i class="ti ti-chevron-${expanded?'up':'down'}" style="color:var(--t3);font-size:14px;flex-shrink:0;margin-right:4px"></i>
+          <button onclick="event.stopPropagation();removeAccount('${t.id}')" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:var(--red);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap">
+            <i class="ti ti-trash" style="font-size:11px"></i> Xoá
           </button>
-        </div>`).join('')}
-      </div>`:''}
+        </div>
+        ${expanded?`
+        <div style="border-top:1px solid var(--bdr2);padding:10px 14px;background:var(--dark3)">
+          <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600">Token</div>
+          <input class="fi" value="${t.token||''}" type="password" placeholder="Access Token..." style="font-size:12px;width:100%;margin-bottom:10px" onchange="updTok('${t.id}','token',this.value)">
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input class="fi" value="${t.name||''}" placeholder="Tên tài khoản..." style="font-size:12px;flex:1" onchange="updTok('${t.id}','name',this.value)">
+          </div>
+          ${myPageToks.length>0?`
+          <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600;margin-top:4px">Page (${myPageToks.length})</div>
+          ${myPageToks.map(p=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:7px;margin-bottom:4px;background:var(--s2)">
+            <div>
+              <span style="font-size:12px;font-weight:600">${p.name||p.page_id}</span>
+              <span style="font-size:10px;color:var(--t3);margin-left:6px">${p.page_id||''}</span>
+            </div>
+            <button onclick="cfDel('token','${p.id}','page ${p.name}')" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);color:var(--red);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:10px">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>`).join('')}`:'<div style="font-size:11px;color:var(--t3)">Chưa có page — chạy Sync để tự động thêm page</div>'}
+        </div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  // Hiện page token không có cha (nếu có)
+  const orphanToks=pageToks.filter(p=>!p.parent_token||!userToks.find(u=>u.id===p.parent_token));
+  if(orphanToks.length>0){
+    html_out+=`<div style="margin-top:8px;padding:10px 14px;background:var(--s2);border-radius:10px;border:1px solid var(--bdr2)">
+      <div style="font-size:11px;color:var(--t3);margin-bottom:8px">Page token lẻ (${orphanToks.length})</div>
+      ${orphanToks.map(p=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:7px;margin-bottom:4px;background:var(--dark3)">
+        <div>
+          <span style="font-size:12px;font-weight:600">${p.name||p.page_id}</span>
+          <span style="font-size:10px;color:var(--t3);margin-left:6px">${p.page_id||''}</span>
+        </div>
+        <button onclick="cfDel('token','${p.id}','page ${p.name}')" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);color:var(--red);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:10px">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>`).join('')}
     </div>`;
-  }).join('');
+  }
+
+  c.innerHTML=html_out||'<div style="font-size:12px;color:var(--t3);padding:8px 0">Chưa có token.</div>';
 }
+
 
 
 // RENDER REV TABLE
